@@ -17,7 +17,7 @@ class TestSelector(unittest.TestCase):
     def setUp(self) -> None:
         self.llama_1b = Model(
             id="meta-llama/llama-3.2-1b-instruct",
-            provider="openrouter",
+            provider="meta",
             tier="free_tier",
             cost_input_per_m=0.0,
             cost_output_per_m=0.0,
@@ -37,7 +37,7 @@ class TestSelector(unittest.TestCase):
         )
         self.gpt_4o_mini = Model(
             id="openai/gpt-4o-mini",
-            provider="openrouter",
+            provider="openai",
             tier="pay_as_you_go",
             cost_input_per_m=0.15,
             cost_output_per_m=0.60,
@@ -57,7 +57,7 @@ class TestSelector(unittest.TestCase):
         )
         self.llama_70b = Model(
             id="meta-llama/llama-3.3-70b-instruct",
-            provider="openrouter",
+            provider="meta",
             tier="pay_as_you_go",
             cost_input_per_m=0.12,
             cost_output_per_m=0.30,
@@ -67,7 +67,7 @@ class TestSelector(unittest.TestCase):
         )
         self.claude_sonnet = Model(
             id="anthropic/claude-3-5-sonnet",
-            provider="openrouter",
+            provider="anthropic",
             tier="pay_as_you_go",
             cost_input_per_m=3.0,
             cost_output_per_m=15.0,
@@ -97,7 +97,7 @@ class TestSelector(unittest.TestCase):
         self.assertTrue(is_model_compatible(self.gemini_lite, req))
 
     def test_doc_agent_selection(self) -> None:
-        """doc_agent (complexité 1-2, prefer_free) doit choisir gemini-2.5-flash-lite (gratuit et score 2)."""
+        """doc_agent (complexité 1-2, prefer_free) doit choisir gemini-2.5-flash-lite."""
         req = AgentRequirement(
             name="doc_agent",
             description="",
@@ -125,8 +125,7 @@ class TestSelector(unittest.TestCase):
         self.assertEqual(selected.id, "google/gemini-2.5-flash")
 
     def test_fallback_when_no_exact_match(self) -> None:
-        """Si aucun modèle ne satisfait la plage stricte, le fallback surclasse vers le modèle le plus économique."""
-        # Agent exige complexité 1 et des outils -> seul llama_1b a complexité 1 mais pas d'outils
+        """Si aucun modèle ne satisfait la plage stricte, le fallback surclasse vers le modèle économique."""
         req = AgentRequirement(
             name="strict_agent",
             description="",
@@ -160,6 +159,105 @@ class TestSelector(unittest.TestCase):
         self.assertIsNotNone(selected)
         self.assertEqual(selected.id, "anthropic/claude-3-5-sonnet")
 
+    def test_min_context_window_filter(self) -> None:
+        """Exclut les modèles ayant une fenêtre de contexte inférieure au seuil."""
+        # Pour une complexité 2, gemini_lite a 1M et gpt_4o_mini a 128k
+        req = AgentRequirement(
+            name="big_doc_agent",
+            description="",
+            min_complexity=2,
+            max_complexity=2,
+            requires_tools=False,
+            prefer_free=False,
+            min_context_window=500000,
+        )
+        selected = select_model_for_agent(req, self.models)
+        self.assertIsNotNone(selected)
+        self.assertEqual(selected.id, "google/gemini-2.5-flash-lite")
+
+    def test_allowed_providers_filter(self) -> None:
+        """Ne retient que les modèles appartenant aux fournisseurs autorisés."""
+        req = AgentRequirement(
+            name="openai_only_agent",
+            description="",
+            min_complexity=2,
+            max_complexity=2,
+            requires_tools=True,
+            prefer_free=False,
+            allowed_providers=["openai"],
+        )
+        selected = select_model_for_agent(req, self.models)
+        self.assertIsNotNone(selected)
+        self.assertEqual(selected.id, "openai/gpt-4o-mini")
+
+    def test_excluded_providers_filter(self) -> None:
+        """Exclut explicitement certains fournisseurs."""
+        req = AgentRequirement(
+            name="no_google_agent",
+            description="",
+            min_complexity=2,
+            max_complexity=2,
+            requires_tools=True,
+            prefer_free=False,
+            excluded_providers=["google"],
+        )
+        selected = select_model_for_agent(req, self.models)
+        self.assertIsNotNone(selected)
+        self.assertEqual(selected.id, "openai/gpt-4o-mini")
+
+    def test_force_model_override(self) -> None:
+        """Un modèle imposé manuellement doit être sélectionné en priorité absolue."""
+        req = AgentRequirement(
+            name="forced_agent",
+            description="",
+            min_complexity=1,
+            max_complexity=1,
+            requires_tools=False,
+            prefer_free=False,
+            force_model="anthropic/claude-3-5-sonnet",
+        )
+        result = resolve_model_for_agent(req, self.models)
+        self.assertIsNotNone(result.model)
+        self.assertEqual(result.model.id, "anthropic/claude-3-5-sonnet")
+        self.assertIn("imposé manuellement", result.reason)
+
+    def test_force_model_not_found(self) -> None:
+        """Un modèle imposé inexistant retourne None avec un motif clair."""
+        req = AgentRequirement(
+            name="forced_unknown_agent",
+            description="",
+            min_complexity=1,
+            max_complexity=1,
+            requires_tools=False,
+            prefer_free=False,
+            force_model="provider/unknown-model",
+        )
+        result = resolve_model_for_agent(req, self.models)
+        self.assertIsNone(result.model)
+    def test_max_monthly_budget_filter(self) -> None:
+        """Exclut les modèles dont le coût estimé dépasse le budget maximal autorisé."""
+        # Pour complexité 2 :
+        # gpt_4o_mini coûte in: $0.15/1M, out: $0.60/1M.
+        # Avec 2M in et 1M out -> coût = $0.30 + $0.60 = $0.90.
+        # Si budget max est $0.50 et prefer_free est False :
+        # gpt_4o_mini ($0.90) est rejeté, mais gemini_lite ($0.00) est compatible !
+        req = AgentRequirement(
+            name="capped_budget_agent",
+            description="",
+            min_complexity=2,
+            max_complexity=2,
+            requires_tools=True,
+            prefer_free=False,
+            estimated_tokens_input=2_000_000,
+            estimated_tokens_output=1_000_000,
+            max_monthly_budget=0.50,
+        )
+        selected = select_model_for_agent(req, self.models)
+        self.assertIsNotNone(selected)
+        # Seul gemini_lite respecte le budget max
+        self.assertEqual(selected.id, "google/gemini-2.5-flash-lite")
+
 
 if __name__ == "__main__":
     unittest.main()
+

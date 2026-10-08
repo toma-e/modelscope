@@ -6,7 +6,11 @@
       "min_complexity": 1,
       "max_complexity": 2,
       "requires_tools": false,
-      "prefer_free": true
+      "prefer_free": true,
+      "min_context_window": 16000,
+      "estimated_tokens_input": 300000,
+      "estimated_tokens_output": 100000,
+      "max_monthly_budget": 2.0
     },
     {
       "name": "coder_agent",
@@ -14,7 +18,11 @@
       "min_complexity": 3,
       "max_complexity": 4,
       "requires_tools": true,
-      "prefer_free": true
+      "prefer_free": true,
+      "min_context_window": 64000,
+      "estimated_tokens_input": 1200000,
+      "estimated_tokens_output": 400000,
+      "max_monthly_budget": 10.0
     },
     {
       "name": "architect_agent",
@@ -22,7 +30,17 @@
       "min_complexity": 5,
       "max_complexity": 5,
       "requires_tools": true,
-      "prefer_free": false
+      "prefer_free": false,
+      "min_context_window": 128000,
+      "allowed_providers": [
+        "anthropic",
+        "openai",
+        "google",
+        "deepseek"
+      ],
+      "estimated_tokens_input": 1000000,
+      "estimated_tokens_output": 250000,
+      "max_monthly_budget": 25.0
     }
   ]
 }
