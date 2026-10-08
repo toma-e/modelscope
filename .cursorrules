@@ -1,0 +1,17 @@
+# Instructions du Projet : ModelScope
+
+## Description
+ModelScope est un outil d'attribution automatique de modèles LLM pour les agents OpenCode.
+Il analyse un registre de modèles (tarifs, capacités, quotas gratuits) et attribue le meilleur modèle à chaque agent selon son profil d'exigence.
+
+## Stack Technique
+- **Langage :** Python 3.11+
+- **Gestionnaire de dépendances :** Poetry ou `pip` avec `requirements.txt` (standard library privilégiée au début)
+- **Format de données :** JSON / YAML
+- **Tests :** `pytest`
+
+## Directives de Code
+- Utiliser la typification stricte (`typing` : `dataclass`, `TypedDict`, `Optional`, `List`).
+- Écrire des fonctions pures et sans effets de bord pour la logique de sélection (`selector.py`).
+- Préférer la lisibilité et la simplicité (KISS) : pas de framework lourd pour le MVP.
+- Documenter le code en français avec des docstrings claires.
