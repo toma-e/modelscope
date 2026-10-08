@@ -1,0 +1,28 @@
+{
+  "agents": [
+    {
+      "name": "doc_agent",
+      "description": "Génération de documentation et commentaires",
+      "min_complexity": 1,
+      "max_complexity": 2,
+      "requires_tools": false,
+      "prefer_free": true
+    },
+    {
+      "name": "coder_agent",
+      "description": "Écriture de fonctions et refactoring classique",
+      "min_complexity": 3,
+      "max_complexity": 4,
+      "requires_tools": true,
+      "prefer_free": true
+    },
+    {
+      "name": "architect_agent",
+      "description": "Résolution de bugs complexes et conception système",
+      "min_complexity": 5,
+      "max_complexity": 5,
+      "requires_tools": true,
+      "prefer_free": false
+    }
+  ]
+}
