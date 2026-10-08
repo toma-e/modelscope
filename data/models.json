@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "models": [
+    {
+      "id": "google/gemini-2.5-flash",
+      "provider": "google",
+      "tier": "free_tier",
+      "cost_input_per_m": 0.0,
+      "cost_output_per_m": 0.0,
+      "context_window": 1000000,
+      "supports_tools": true,
+      "complexity_score": 3
+    },
+    {
+      "id": "meta-llama/llama-3.3-70b-instruct",
+      "provider": "openrouter",
+      "tier": "pay_as_you_go",
+      "cost_input_per_m": 0.12,
+      "cost_output_per_m": 0.30,
+      "context_window": 128000,
+      "supports_tools": true,
+      "complexity_score": 4
+    },
+    {
+      "id": "anthropic/claude-3-5-sonnet",
+      "provider": "openrouter",
+      "tier": "pay_as_you_go",
+      "cost_input_per_m": 3.0,
+      "cost_output_per_m": 15.0,
+      "context_window": 200000,
+      "supports_tools": true,
+      "complexity_score": 5
+    }
+  ]
+}
