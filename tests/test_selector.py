@@ -6,8 +6,6 @@ from src.selector import (
     AgentRequirement,
     Model,
     is_model_compatible,
-    is_model_fallback_compatible,
-    rank_models_for_agent,
     resolve_model_for_agent,
     select_model_for_agent,
 )
@@ -234,6 +232,62 @@ class TestSelector(unittest.TestCase):
         )
         result = resolve_model_for_agent(req, self.models)
         self.assertIsNone(result.model)
+
+    def test_force_model_reports_bypassed_constraints(self) -> None:
+        req = AgentRequirement(
+            name="forced_incompatible",
+            description="",
+            min_complexity=1,
+            max_complexity=1,
+            requires_tools=True,
+            prefer_free=False,
+            min_context_window=100_000,
+            allowed_providers=["openai"],
+            estimated_tokens_input=2_000_000,
+            max_monthly_budget=0.01,
+            force_model="meta-llama/llama-3.2-1b-instruct",
+        )
+        result = resolve_model_for_agent(req, self.models)
+        self.assertIsNotNone(result.model)
+        self.assertIn("Contraintes contournées", result.reason)
+        self.assertIn("support des outils", result.reason)
+        self.assertIn("fournisseur non autorisé", result.reason)
+
+    def test_agent_validation_rejects_invalid_values(self) -> None:
+        invalid = {
+            "name": "bad",
+            "min_complexity": 4,
+            "max_complexity": 2,
+            "requires_tools": "yes",
+        }
+        with self.assertRaisesRegex(ValueError, "plage de complexité"):
+            AgentRequirement.from_dict(invalid, "agent #1")
+
+    def test_agent_validation_rejects_provider_conflict(self) -> None:
+        invalid = {
+            "name": "bad",
+            "min_complexity": 1,
+            "max_complexity": 2,
+            "requires_tools": False,
+            "allowed_providers": ["OpenAI"],
+            "excluded_providers": ["openai"],
+        }
+        with self.assertRaisesRegex(ValueError, "à la fois autorisé et exclu"):
+            AgentRequirement.from_dict(invalid)
+
+    def test_model_validation_rejects_negative_cost(self) -> None:
+        raw = {
+            "id": "test/model",
+            "provider": "test",
+            "tier": "pay_as_you_go",
+            "cost_input_per_m": -1,
+            "cost_output_per_m": 0,
+            "context_window": 1,
+            "supports_tools": True,
+            "complexity_score": 1,
+        }
+        with self.assertRaisesRegex(ValueError, "cost_input_per_m"):
+            Model.from_dict(raw)
     def test_max_monthly_budget_filter(self) -> None:
         """Exclut les modèles dont le coût estimé dépasse le budget maximal autorisé."""
         # Pour complexité 2 :

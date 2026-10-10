@@ -1,9 +1,19 @@
 {
   "version": "1.0",
-  "last_updated": "2026-10-08T13:02:18.630335",
+  "last_updated": "2026-10-10T12:35:45.984241+00:00",
   "source": "https://openrouter.ai/api/v1/models",
-  "total_models": 386,
+  "total_models": 375,
   "models": [
+    {
+      "id": "stepfun/step-5-preview",
+      "provider": "stepfun",
+      "tier": "pay_as_you_go",
+      "cost_input_per_m": 1.0,
+      "cost_output_per_m": 2.7,
+      "context_window": 1000000,
+      "supports_tools": true,
+      "complexity_score": 4
+    },
     {
       "id": "anthropic/claude-haiku-5.5",
       "provider": "anthropic",
@@ -30,7 +40,7 @@
       "tier": "pay_as_you_go",
       "cost_input_per_m": 0.68,
       "cost_output_per_m": 2.09,
-      "context_window": 524288,
+      "context_window": 1048576,
       "supports_tools": true,
       "complexity_score": 4
     },
@@ -162,7 +172,7 @@
       "cost_output_per_m": 0.2,
       "context_window": 524288,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "cohere/command-a-plus",
@@ -282,7 +292,7 @@
       "cost_output_per_m": 0.5,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "z-ai/glm-5.3-flashx",
@@ -308,8 +318,8 @@
       "id": "~deepseek/deepseek-pro-latest",
       "provider": "~deepseek",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.108,
-      "cost_output_per_m": 8.0,
+      "cost_input_per_m": 0.22,
+      "cost_output_per_m": 4.0,
       "context_window": 1048576,
       "supports_tools": true,
       "complexity_score": 3
@@ -318,8 +328,8 @@
       "id": "~deepseek/deepseek-flash-latest",
       "provider": "~deepseek",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.0346,
-      "cost_output_per_m": 1.0,
+      "cost_input_per_m": 0.0001,
+      "cost_output_per_m": 0.6,
       "context_window": 1048576,
       "supports_tools": true,
       "complexity_score": 3
@@ -418,8 +428,8 @@
       "id": "deepseek/deepseek-v4.1-flash",
       "provider": "deepseek",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.0346,
-      "cost_output_per_m": 1.0,
+      "cost_input_per_m": 0.3,
+      "cost_output_per_m": 1.2,
       "context_window": 1048576,
       "supports_tools": true,
       "complexity_score": 3
@@ -475,11 +485,11 @@
       "complexity_score": 5
     },
     {
-      "id": "inclusionai/ling-3.0-flash-sante:free",
+      "id": "inclusionai/ling-3.0-flash-sante",
       "provider": "inclusionai",
-      "tier": "free_tier",
-      "cost_input_per_m": 0.0,
-      "cost_output_per_m": 0.0,
+      "tier": "pay_as_you_go",
+      "cost_input_per_m": 0.042,
+      "cost_output_per_m": 0.1232,
       "context_window": 262144,
       "supports_tools": true,
       "complexity_score": 3
@@ -522,7 +532,7 @@
       "cost_output_per_m": 3.75,
       "context_window": 1048576,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "anthropic/claude-fable-5.1",
@@ -568,8 +578,8 @@
       "id": "~z-ai/glm-flash-latest",
       "provider": "~z-ai",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.032,
-      "cost_output_per_m": 2.5063,
+      "cost_input_per_m": 0.04,
+      "cost_output_per_m": 0.5,
       "context_window": 1048576,
       "supports_tools": true,
       "complexity_score": 3
@@ -622,7 +632,7 @@
       "cost_output_per_m": 0.177,
       "context_window": 8192,
       "supports_tools": false,
-      "complexity_score": 3
+      "complexity_score": 2
     },
     {
       "id": "tencent/hy-mt2-30b-a3b",
@@ -632,14 +642,14 @@
       "cost_output_per_m": 0.295,
       "context_window": 8192,
       "supports_tools": false,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "~z-ai/glm-latest",
       "provider": "~z-ai",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.036,
-      "cost_output_per_m": 12.0,
+      "cost_input_per_m": 0.039,
+      "cost_output_per_m": 4.8,
       "context_window": 1048576,
       "supports_tools": true,
       "complexity_score": 2
@@ -658,8 +668,8 @@
       "id": "z-ai/glm-5.3",
       "provider": "z-ai",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.049,
-      "cost_output_per_m": 3.39,
+      "cost_input_per_m": 0.039,
+      "cost_output_per_m": 4.8,
       "context_window": 1048576,
       "supports_tools": true,
       "complexity_score": 2
@@ -672,7 +682,7 @@
       "cost_output_per_m": 2.55,
       "context_window": 1000000,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "dots-studio/dots-3-note-preview:free",
@@ -692,7 +702,7 @@
       "cost_output_per_m": 3.75,
       "context_window": 1048576,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "bytedance-seed/seed-2-1-turbo",
@@ -758,11 +768,11 @@
       "id": "nvidia/nemotron-3.5-lightning",
       "provider": "nvidia",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.049,
-      "cost_output_per_m": 0.14,
+      "cost_input_per_m": 0.07,
+      "cost_output_per_m": 0.2,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "nvidia/nemotron-3.5-lightning:free",
@@ -792,7 +802,7 @@
       "cost_output_per_m": 0.36,
       "context_window": 524288,
       "supports_tools": true,
-      "complexity_score": 3
+      "complexity_score": 5
     },
     {
       "id": "meta/muse-glimmer-30b",
@@ -818,7 +828,7 @@
       "id": "~deepseek/deepseek-v4-flash-latest",
       "provider": "~deepseek",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.0046,
+      "cost_input_per_m": 0.0116,
       "cost_output_per_m": 1.28,
       "context_window": 1048576,
       "supports_tools": true,
@@ -828,7 +838,7 @@
       "id": "deepseek/deepseek-v4-flash-0731",
       "provider": "deepseek",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.0046,
+      "cost_input_per_m": 0.0116,
       "cost_output_per_m": 1.28,
       "context_window": 1048576,
       "supports_tools": true,
@@ -912,7 +922,7 @@
       "cost_output_per_m": 3.75,
       "context_window": 1048576,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "google/gemini-3.5-flash-lite",
@@ -958,8 +968,8 @@
       "id": "moonshotai/kimi-k3",
       "provider": "moonshotai",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.62,
-      "cost_output_per_m": 12.3,
+      "cost_input_per_m": 0.64,
+      "cost_output_per_m": 13.5,
       "context_window": 1048576,
       "supports_tools": true,
       "complexity_score": 4
@@ -1142,7 +1152,7 @@
       "cost_output_per_m": 3.0,
       "context_window": 131072,
       "supports_tools": false,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "google/gemini-3-pro-image",
@@ -1152,7 +1162,7 @@
       "cost_output_per_m": 12.0,
       "context_window": 131072,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 5
     },
     {
       "id": "cohere/north-mini-code:free",
@@ -1168,11 +1178,11 @@
       "id": "z-ai/glm-5.2",
       "provider": "z-ai",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.03,
-      "cost_output_per_m": 10.0,
+      "cost_input_per_m": 0.06,
+      "cost_output_per_m": 7.0,
       "context_window": 1048576,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "moonshotai/kimi-k2.7-code",
@@ -1242,7 +1252,7 @@
       "cost_output_per_m": 0.0,
       "context_window": 1000000,
       "supports_tools": true,
-      "complexity_score": 3
+      "complexity_score": 4
     },
     {
       "id": "qwen/qwen3.7-plus",
@@ -1262,7 +1272,7 @@
       "cost_output_per_m": 1.2,
       "context_window": 1048576,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "stepfun/step-3.7-flash",
@@ -1312,7 +1322,7 @@
       "cost_output_per_m": 9.0,
       "context_window": 1048576,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "perceptron/perceptron-mk1",
@@ -1402,14 +1412,14 @@
       "cost_output_per_m": 12.0,
       "context_window": 1048576,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 5
     },
     {
       "id": "~moonshotai/kimi-latest",
       "provider": "~moonshotai",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.45,
-      "cost_output_per_m": 13.0,
+      "cost_input_per_m": 0.31,
+      "cost_output_per_m": 14.89,
       "context_window": 1048576,
       "supports_tools": true,
       "complexity_score": 3
@@ -1422,7 +1432,7 @@
       "cost_output_per_m": 3.75,
       "context_window": 1048576,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "~anthropic/claude-sonnet-latest",
@@ -1462,27 +1472,17 @@
       "cost_output_per_m": 1.0,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 2
-    },
-    {
-      "id": "qwen/qwen3.6-max-preview",
-      "provider": "qwen",
-      "tier": "pay_as_you_go",
-      "cost_input_per_m": 1.027,
-      "cost_output_per_m": 6.162,
-      "context_window": 262144,
-      "supports_tools": true,
       "complexity_score": 4
     },
     {
       "id": "qwen/qwen3.6-27b",
       "provider": "qwen",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.3,
-      "cost_output_per_m": 2.0,
+      "cost_input_per_m": 0.32,
+      "cost_output_per_m": 3.2,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "openai/gpt-5.5-pro",
@@ -1508,8 +1508,8 @@
       "id": "deepseek/deepseek-v4-pro",
       "provider": "deepseek",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.9553,
-      "cost_output_per_m": 1.9105,
+      "cost_input_per_m": 0.9483,
+      "cost_output_per_m": 1.8966,
       "context_window": 1048576,
       "supports_tools": true,
       "complexity_score": 4
@@ -1518,7 +1518,7 @@
       "id": "deepseek/deepseek-v4-flash",
       "provider": "deepseek",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.0057,
+      "cost_input_per_m": 0.0216,
       "cost_output_per_m": 1.28,
       "context_window": 1048576,
       "supports_tools": true,
@@ -1608,8 +1608,8 @@
       "id": "google/gemma-4-26b-a4b-it",
       "provider": "google",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.09,
-      "cost_output_per_m": 0.3,
+      "cost_input_per_m": 0.0675,
+      "cost_output_per_m": 0.225,
       "context_window": 262144,
       "supports_tools": true,
       "complexity_score": 3
@@ -1632,7 +1632,7 @@
       "cost_output_per_m": 0.34,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 1
+      "complexity_score": 3
     },
     {
       "id": "google/gemma-4-31b-it:free",
@@ -1642,7 +1642,7 @@
       "cost_output_per_m": 0.0,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 1
+      "complexity_score": 3
     },
     {
       "id": "qwen/qwen3.6-plus",
@@ -1732,7 +1732,7 @@
       "cost_output_per_m": 0.84,
       "context_window": 204800,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "openai/gpt-5.4-nano",
@@ -1778,11 +1778,11 @@
       "id": "nvidia/nemotron-3-super-120b-a12b",
       "provider": "nvidia",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.085,
-      "cost_output_per_m": 0.4,
+      "cost_input_per_m": 0.08,
+      "cost_output_per_m": 0.45,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 3
+      "complexity_score": 4
     },
     {
       "id": "nvidia/nemotron-3-super-120b-a12b:free",
@@ -1792,7 +1792,7 @@
       "cost_output_per_m": 0.0,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 3
+      "complexity_score": 4
     },
     {
       "id": "bytedance-seed/seed-2.0-lite",
@@ -1872,17 +1872,17 @@
       "cost_output_per_m": 3.0,
       "context_window": 65536,
       "supports_tools": false,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "qwen/qwen3.5-35b-a3b",
       "provider": "qwen",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.15,
-      "cost_output_per_m": 1.0,
+      "cost_input_per_m": 0.08,
+      "cost_output_per_m": 0.75,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 4
     },
     {
       "id": "qwen/qwen3.5-27b",
@@ -1892,7 +1892,7 @@
       "cost_output_per_m": 2.6,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "qwen/qwen3.5-122b-a10b",
@@ -1902,7 +1902,7 @@
       "cost_output_per_m": 2.08,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 3
+      "complexity_score": 4
     },
     {
       "id": "qwen/qwen3.5-flash-02-23",
@@ -1922,7 +1922,7 @@
       "cost_output_per_m": 12.0,
       "context_window": 1048576,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 5
     },
     {
       "id": "openai/gpt-5.3-codex",
@@ -1952,7 +1952,7 @@
       "cost_output_per_m": 12.0,
       "context_window": 1048576,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 5
     },
     {
       "id": "anthropic/claude-sonnet-4.6",
@@ -1978,11 +1978,11 @@
       "id": "qwen/qwen3.5-397b-a17b",
       "provider": "qwen",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.45,
-      "cost_output_per_m": 3.0,
+      "cost_input_per_m": 0.55,
+      "cost_output_per_m": 3.5,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 4
     },
     {
       "id": "minimax/minimax-m2.5",
@@ -1992,7 +1992,7 @@
       "cost_output_per_m": 1.08,
       "context_window": 204800,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "z-ai/glm-5",
@@ -2001,16 +2001,6 @@
       "cost_input_per_m": 0.6,
       "cost_output_per_m": 1.92,
       "context_window": 204800,
-      "supports_tools": true,
-      "complexity_score": 4
-    },
-    {
-      "id": "qwen/qwen3-max-thinking",
-      "provider": "qwen",
-      "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.78,
-      "cost_output_per_m": 3.9,
-      "context_window": 262144,
       "supports_tools": true,
       "complexity_score": 4
     },
@@ -2058,11 +2048,11 @@
       "id": "moonshotai/kimi-k2.5",
       "provider": "moonshotai",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.45,
-      "cost_output_per_m": 2.25,
+      "cost_input_per_m": 0.5,
+      "cost_output_per_m": 2.5,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 3
+      "complexity_score": 4
     },
     {
       "id": "upstage/solar-pro-3",
@@ -2082,7 +2072,7 @@
       "cost_output_per_m": 1.2,
       "context_window": 65536,
       "supports_tools": false,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "writer/palmyra-x5",
@@ -2162,7 +2152,7 @@
       "cost_output_per_m": 1.2,
       "context_window": 204800,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "z-ai/glm-4.7",
@@ -2182,7 +2172,7 @@
       "cost_output_per_m": 3.0,
       "context_window": 1048576,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "nvidia/nemotron-3-nano-30b-a3b",
@@ -2282,7 +2272,7 @@
       "cost_output_per_m": 0.2,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "mistralai/ministral-8b-2512",
@@ -2292,7 +2282,7 @@
       "cost_output_per_m": 0.15,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "mistralai/ministral-3b-2512",
@@ -2319,7 +2309,7 @@
       "provider": "deepseek",
       "tier": "pay_as_you_go",
       "cost_input_per_m": 0.259,
-      "cost_output_per_m": 0.42,
+      "cost_output_per_m": 0.8,
       "context_window": 163840,
       "supports_tools": true,
       "complexity_score": 4
@@ -2342,7 +2332,7 @@
       "cost_output_per_m": 12.0,
       "context_window": 65536,
       "supports_tools": false,
-      "complexity_score": 2
+      "complexity_score": 5
     },
     {
       "id": "openai/gpt-5.1",
@@ -2432,16 +2422,6 @@
       "cost_output_per_m": 1.2,
       "context_window": 204800,
       "supports_tools": true,
-      "complexity_score": 2
-    },
-    {
-      "id": "qwen/qwen3-vl-32b-instruct",
-      "provider": "qwen",
-      "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.104,
-      "cost_output_per_m": 0.416,
-      "context_window": 131072,
-      "supports_tools": true,
       "complexity_score": 3
     },
     {
@@ -2475,21 +2455,11 @@
       "complexity_score": 3
     },
     {
-      "id": "qwen/qwen3-vl-8b-thinking",
-      "provider": "qwen",
-      "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.18,
-      "cost_output_per_m": 2.1,
-      "context_window": 131072,
-      "supports_tools": true,
-      "complexity_score": 3
-    },
-    {
       "id": "qwen/qwen3-vl-8b-instruct",
       "provider": "qwen",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.117,
-      "cost_output_per_m": 0.455,
+      "cost_input_per_m": 0.25,
+      "cost_output_per_m": 0.75,
       "context_window": 262144,
       "supports_tools": true,
       "complexity_score": 3
@@ -2512,17 +2482,17 @@
       "cost_output_per_m": 2.5,
       "context_window": 32768,
       "supports_tools": false,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "qwen/qwen3-vl-30b-a3b-thinking",
       "provider": "qwen",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.2,
-      "cost_output_per_m": 2.4,
+      "cost_input_per_m": 0.29,
+      "cost_output_per_m": 1.0,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "qwen/qwen3-vl-30b-a3b-instruct",
@@ -2532,7 +2502,7 @@
       "cost_output_per_m": 0.6,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "openai/gpt-5-pro",
@@ -2548,11 +2518,11 @@
       "id": "z-ai/glm-4.6",
       "provider": "z-ai",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.43,
-      "cost_output_per_m": 1.75,
+      "cost_input_per_m": 0.5,
+      "cost_output_per_m": 2.0,
       "context_window": 204800,
       "supports_tools": true,
-      "complexity_score": 3
+      "complexity_score": 4
     },
     {
       "id": "anthropic/claude-sonnet-4.5",
@@ -2595,42 +2565,12 @@
       "complexity_score": 4
     },
     {
-      "id": "qwen/qwen3-vl-235b-a22b-thinking",
-      "provider": "qwen",
-      "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.4,
-      "cost_output_per_m": 4.0,
-      "context_window": 131072,
-      "supports_tools": true,
-      "complexity_score": 3
-    },
-    {
       "id": "qwen/qwen3-vl-235b-a22b-instruct",
       "provider": "qwen",
       "tier": "pay_as_you_go",
       "cost_input_per_m": 0.21,
       "cost_output_per_m": 1.9,
       "context_window": 262144,
-      "supports_tools": true,
-      "complexity_score": 3
-    },
-    {
-      "id": "qwen/qwen3-max",
-      "provider": "qwen",
-      "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.78,
-      "cost_output_per_m": 3.9,
-      "context_window": 262144,
-      "supports_tools": true,
-      "complexity_score": 4
-    },
-    {
-      "id": "qwen/qwen3-coder-plus",
-      "provider": "qwen",
-      "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.65,
-      "cost_output_per_m": 3.25,
-      "context_window": 1000000,
       "supports_tools": true,
       "complexity_score": 4
     },
@@ -2662,27 +2602,17 @@
       "cost_output_per_m": 1.2,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 4
     },
     {
       "id": "qwen/qwen3-next-80b-a3b-instruct",
       "provider": "qwen",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.15,
-      "cost_output_per_m": 1.5,
+      "cost_input_per_m": 0.1,
+      "cost_output_per_m": 1.1,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 2
-    },
-    {
-      "id": "qwen/qwen-plus-2025-07-28",
-      "provider": "qwen",
-      "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.26,
-      "cost_output_per_m": 0.78,
-      "context_window": 1000000,
-      "supports_tools": true,
-      "complexity_score": 3
+      "complexity_score": 4
     },
     {
       "id": "moonshotai/kimi-k2-0905",
@@ -2693,16 +2623,6 @@
       "context_window": 262144,
       "supports_tools": true,
       "complexity_score": 4
-    },
-    {
-      "id": "qwen/qwen3-30b-a3b-thinking-2507",
-      "provider": "qwen",
-      "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.2,
-      "cost_output_per_m": 2.4,
-      "context_window": 81920,
-      "supports_tools": true,
-      "complexity_score": 2
     },
     {
       "id": "nousresearch/hermes-4-405b",
@@ -2782,7 +2702,7 @@
       "cost_output_per_m": 0.17,
       "context_window": 131072,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 4
     },
     {
       "id": "openai/gpt-oss-20b",
@@ -2822,17 +2742,17 @@
       "cost_output_per_m": 0.28,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "qwen/qwen3-30b-a3b-instruct-2507",
       "provider": "qwen",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.0481,
-      "cost_output_per_m": 0.193,
+      "cost_input_per_m": 0.1,
+      "cost_output_per_m": 0.3,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "z-ai/glm-4.5",
@@ -2858,11 +2778,11 @@
       "id": "qwen/qwen3-235b-a22b-thinking-2507",
       "provider": "qwen",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.23,
-      "cost_output_per_m": 2.3,
-      "context_window": 131072,
+      "cost_input_per_m": 0.45,
+      "cost_output_per_m": 3.5,
+      "context_window": 128000,
       "supports_tools": true,
-      "complexity_score": 3
+      "complexity_score": 4
     },
     {
       "id": "qwen/qwen3-coder",
@@ -2902,7 +2822,7 @@
       "cost_output_per_m": 0.55,
       "context_window": 262144,
       "supports_tools": true,
-      "complexity_score": 3
+      "complexity_score": 4
     },
     {
       "id": "moonshotai/kimi-k2",
@@ -2932,7 +2852,7 @@
       "cost_output_per_m": 0.57,
       "context_window": 131072,
       "supports_tools": false,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "morph/morph-v3-large",
@@ -2955,16 +2875,6 @@
       "complexity_score": 4
     },
     {
-      "id": "baidu/ernie-4.5-vl-424b-a47b",
-      "provider": "baidu",
-      "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.42,
-      "cost_output_per_m": 1.25,
-      "context_window": 123000,
-      "supports_tools": false,
-      "complexity_score": 2
-    },
-    {
       "id": "mistralai/mistral-small-3.2-24b-instruct",
       "provider": "mistralai",
       "tier": "pay_as_you_go",
@@ -2982,7 +2892,7 @@
       "cost_output_per_m": 2.2,
       "context_window": 1000000,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 4
     },
     {
       "id": "google/gemini-2.5-flash",
@@ -2992,7 +2902,7 @@
       "cost_output_per_m": 2.5,
       "context_window": 1048576,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "google/gemini-2.5-pro",
@@ -3002,7 +2912,7 @@
       "cost_output_per_m": 10.0,
       "context_window": 1048576,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 4
     },
     {
       "id": "openai/o3-pro",
@@ -3022,7 +2932,7 @@
       "cost_output_per_m": 10.0,
       "context_window": 1048576,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 4
     },
     {
       "id": "deepseek/deepseek-r1-0528",
@@ -3070,17 +2980,7 @@
       "tier": "pay_as_you_go",
       "cost_input_per_m": 0.12,
       "cost_output_per_m": 0.5,
-      "context_window": 131072,
-      "supports_tools": true,
-      "complexity_score": 2
-    },
-    {
-      "id": "qwen/qwen3-8b",
-      "provider": "qwen",
-      "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.117,
-      "cost_output_per_m": 0.455,
-      "context_window": 131072,
+      "context_window": 40960,
       "supports_tools": true,
       "complexity_score": 3
     },
@@ -3090,7 +2990,7 @@
       "tier": "pay_as_you_go",
       "cost_input_per_m": 0.12,
       "cost_output_per_m": 0.24,
-      "context_window": 131072,
+      "context_window": 40960,
       "supports_tools": true,
       "complexity_score": 3
     },
@@ -3105,16 +3005,6 @@
       "complexity_score": 3
     },
     {
-      "id": "qwen/qwen3-235b-a22b",
-      "provider": "qwen",
-      "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.455,
-      "cost_output_per_m": 1.82,
-      "context_window": 131072,
-      "supports_tools": true,
-      "complexity_score": 3
-    },
-    {
       "id": "openai/o4-mini-high",
       "provider": "openai",
       "tier": "pay_as_you_go",
@@ -3122,7 +3012,7 @@
       "cost_output_per_m": 4.4,
       "context_window": 200000,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 5
     },
     {
       "id": "openai/o3",
@@ -3142,7 +3032,7 @@
       "cost_output_per_m": 4.4,
       "context_window": 200000,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 5
     },
     {
       "id": "openai/gpt-4.1",
@@ -3162,7 +3052,7 @@
       "cost_output_per_m": 1.6,
       "context_window": 1047576,
       "supports_tools": true,
-      "complexity_score": 5
+      "complexity_score": 2
     },
     {
       "id": "openai/gpt-4.1-nano",
@@ -3272,7 +3162,7 @@
       "cost_output_per_m": 0.45,
       "context_window": 131072,
       "supports_tools": true,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "thedrummer/skyfall-36b-v2",
@@ -3412,7 +3302,7 @@
       "cost_output_per_m": 1.1,
       "context_window": 1000192,
       "supports_tools": false,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "microsoft/phi-4",
@@ -3422,14 +3312,14 @@
       "cost_output_per_m": 0.14,
       "context_window": 16384,
       "supports_tools": false,
-      "complexity_score": 1
+      "complexity_score": 3
     },
     {
       "id": "deepseek/deepseek-chat",
       "provider": "deepseek",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.2574,
-      "cost_output_per_m": 1.0287,
+      "cost_input_per_m": 0.32,
+      "cost_output_per_m": 0.89,
       "context_window": 163840,
       "supports_tools": true,
       "complexity_score": 3
@@ -3468,8 +3358,8 @@
       "id": "meta-llama/llama-3.3-70b-instruct",
       "provider": "meta-llama",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.1,
-      "cost_output_per_m": 0.32,
+      "cost_input_per_m": 0.22,
+      "cost_output_per_m": 0.5,
       "context_window": 131072,
       "supports_tools": true,
       "complexity_score": 4
@@ -3621,7 +3511,7 @@
       "cost_input_per_m": 0.85,
       "cost_output_per_m": 0.85,
       "context_window": 131072,
-      "supports_tools": true,
+      "supports_tools": false,
       "complexity_score": 5
     },
     {
@@ -3688,7 +3578,7 @@
       "id": "mistralai/mistral-nemo",
       "provider": "mistralai",
       "tier": "pay_as_you_go",
-      "cost_input_per_m": 0.019,
+      "cost_input_per_m": 0.029,
       "cost_output_per_m": 0.03,
       "context_window": 131072,
       "supports_tools": true,
@@ -3702,7 +3592,7 @@
       "cost_output_per_m": 0.6,
       "context_window": 128000,
       "supports_tools": true,
-      "complexity_score": 5
+      "complexity_score": 2
     },
     {
       "id": "openai/gpt-4o-mini-2024-07-18",
@@ -3712,7 +3602,7 @@
       "cost_output_per_m": 0.6,
       "context_window": 128000,
       "supports_tools": true,
-      "complexity_score": 5
+      "complexity_score": 2
     },
     {
       "id": "google/gemma-2-27b-it",
@@ -3722,7 +3612,7 @@
       "cost_output_per_m": 0.65,
       "context_window": 8192,
       "supports_tools": false,
-      "complexity_score": 2
+      "complexity_score": 4
     },
     {
       "id": "openai/gpt-4o",
@@ -3752,7 +3642,7 @@
       "cost_output_per_m": 6.0,
       "context_window": 65536,
       "supports_tools": true,
-      "complexity_score": 5
+      "complexity_score": 4
     },
     {
       "id": "microsoft/wizardlm-2-8x22b",
@@ -3762,7 +3652,7 @@
       "cost_output_per_m": 0.62,
       "context_window": 65535,
       "supports_tools": false,
-      "complexity_score": 1
+      "complexity_score": 4
     },
     {
       "id": "openai/gpt-4-turbo",
@@ -3832,7 +3722,7 @@
       "cost_output_per_m": 0.65,
       "context_window": 6144,
       "supports_tools": false,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "gryphe/mythomax-l2-13b",
@@ -3842,7 +3732,7 @@
       "cost_output_per_m": 0.11,
       "context_window": 8192,
       "supports_tools": false,
-      "complexity_score": 2
+      "complexity_score": 3
     },
     {
       "id": "openai/gpt-3.5-turbo",

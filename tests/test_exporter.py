@@ -57,6 +57,7 @@ class TestExporter(unittest.TestCase):
         self.assertEqual(config["metadata"]["total_agents"], 1)
         self.assertEqual(config["metadata"]["assigned_agents"], 1)
         self.assertEqual(config["metadata"]["unassigned_agents"], 0)
+        self.assertTrue(config["generated_at"].endswith("+00:00"))
 
         agent_entry = config["agents"]["coder_agent"]
         self.assertTrue(agent_entry["enabled"])

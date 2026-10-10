@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generated_at": "2026-10-10T13:50:08.376168",
+  "generated_at": "2026-10-10T12:38:29.264107+00:00",
   "metadata": {
     "generator": "ModelScope",
     "total_agents": 3,
@@ -75,10 +75,10 @@
       "max_monthly_budget": 10.0,
       "estimated_monthly_cost": 0.0,
       "model": {
-        "id": "inclusionai/ling-3.1-flash",
-        "provider": "inclusionai",
+        "id": "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "provider": "nvidia",
         "tier": "free_tier",
-        "context_window": 262144,
+        "context_window": 1000000,
         "supports_tools": true,
         "cost_input_per_m": 0.0,
         "cost_output_per_m": 0.0,

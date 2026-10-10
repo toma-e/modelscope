@@ -58,7 +58,9 @@ modelscope/
 2. **Moteur de Sélection Typé & Intelligent :**
    - Filtrage strict : niveau de complexité (`min_complexity`, `max_complexity`), support des outils (`requires_tools`), fenêtre de contexte minimale (`min_context_window`).
    - Listes blanches et noires de fournisseurs (`allowed_providers`, `excluded_providers`).
-   - Forçage manuel possible (`force_model`).
+   - Forçage manuel possible (`force_model`). Il reste volontairement prioritaire sur
+     toutes les contraintes ; l'attribution et l'export indiquent explicitement les
+     contraintes techniques ou budgétaires ainsi contournées.
    - Priorisation absolue du niveau gratuit (`prefer_free = true`).
    - **Surclassement économique automatique (`fallback`) :** si aucun modèle n'est disponible dans la plage exacte, surclassement vers le modèle compatible le plus économique.
 
@@ -118,6 +120,16 @@ Le projet dispose d'une suite de tests complète sans dépendance externe :
 ```bash
 python3 -m unittest discover tests
 ```
+
+Pour les contrôles statiques (après installation des dépendances de développement) :
+
+```bash
+python3 -m ruff check .
+python3 -m mypy .
+```
+
+La CI GitHub Actions exécute ces trois contrôles sous Python 3.11 et 3.12 à chaque
+push et pull request.
 
 ---
 

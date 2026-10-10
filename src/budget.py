@@ -9,7 +9,7 @@ Ce module permet de :
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence
+from typing import List, Optional, Sequence
 
 from src.selector import AgentRequirement, Model, SelectionResult
 

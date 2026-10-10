@@ -2,12 +2,7 @@
 
 import unittest
 
-from src.budget import (
-    FREE_TIER_MONTHLY_TOKEN_THRESHOLD,
-    calculate_agent_cost,
-    simulate_agent_budget,
-    simulate_fleet_budget,
-)
+from src.budget import calculate_agent_cost, simulate_agent_budget, simulate_fleet_budget
 from src.selector import AgentRequirement, Model, SelectionResult
 
 
@@ -121,6 +116,11 @@ class TestBudget(unittest.TestCase):
         # 600k tokens gratuits * $0.50/1M = $0.30 d'économies
         self.assertEqual(fleet.free_tier_savings, 0.30)
         self.assertEqual(len(fleet.agent_reports), 2)
+
+    def test_fleet_budget_has_warning(self) -> None:
+        req = AgentRequirement("heavy", "", 1, 2, False, True, estimated_tokens_input=1_000_001)
+        result = SelectionResult("heavy", self.free_model, False, [self.free_model], "ok")
+        self.assertTrue(simulate_fleet_budget([result], [req]).has_budget_warnings)
 
 
 if __name__ == "__main__":

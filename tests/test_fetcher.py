@@ -4,10 +4,13 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
+from urllib.error import URLError
 
 from src.fetcher import (
     create_backup,
     estimate_complexity_score,
+    fetch_openrouter_models,
     parse_openrouter_model,
 )
 
@@ -21,6 +24,17 @@ class TestFetcher(unittest.TestCase):
         self.assertEqual(estimate_complexity_score("google/gemini-2.5-flash", 0.0), 3)
         self.assertEqual(estimate_complexity_score("google/gemini-2.5-flash-lite", 0.0), 2)
         self.assertEqual(estimate_complexity_score("meta-llama/llama-3.2-1b-instruct", 0.0), 1)
+        self.assertEqual(estimate_complexity_score("google/gemma-4-31b-it", 0.0), 3)
+        self.assertEqual(estimate_complexity_score("qwen/qwen3.6-35b-a3b", 0.0), 4)
+        self.assertEqual(estimate_complexity_score("microsoft/wizardlm-2-8x22b", 0.0), 4)
+        self.assertEqual(estimate_complexity_score("openai/o4-mini", 0.0), 5)
+        self.assertEqual(estimate_complexity_score("openai/o4-mini-high", 0.0), 5)
+
+    @patch("src.fetcher.urllib.request.urlopen", side_effect=URLError("timeout"))
+    def test_fetch_openrouter_models_propagates_network_error(self, mocked_urlopen: object) -> None:
+        """Une erreur réseau n'est pas transformée en catalogue vide."""
+        with self.assertRaises(URLError):
+            fetch_openrouter_models(timeout=1)
 
     def test_parse_openrouter_model_valid(self) -> None:
         raw = {

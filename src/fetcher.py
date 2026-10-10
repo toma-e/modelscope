@@ -13,7 +13,7 @@ import json
 import re
 import shutil
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, List, Optional, Tuple
 
@@ -35,26 +35,34 @@ def estimate_complexity_score(model_id: str, prompt_cost_per_m: float) -> int:
     m_id = model_id.lower()
 
     # Score 5 : modèles de pointe / raisonnement approfondi
-    if any(k in m_id for k in ["opus", "sonnet", "o1", "o3", "r1", "deepseek-r1", "405b", "gpt-5"]):
+    if any(k in m_id for k in ["opus", "sonnet", "o1", "o3", "o4", "r1", "deepseek-r1", "405b", "gpt-5"]):
         return 5
     if "gpt-4" in m_id and "mini" not in m_id:
         return 5
 
-    # Score 4 : modèles 70B+ et gros modèles open-source
-    if any(k in m_id for k in ["70b", "72b", "mistral-large", "deepseek-v3", "codestral", "command-r+"]):
+    # Score 4 : modèles 70B+ et gros modèles open-source.
+    # Les tailles sont reconnues comme des jetons complets : "1b" ne doit pas
+    # capturer "31b" ou "8x22b".
+    if any(k in m_id for k in ["mistral-large", "deepseek-v3", "codestral", "command-r+"]):
+        return 4
+    parameter_tokens = re.findall(r"(?<![a-z0-9])(?:\d+x)?(\d+(?:\.\d+)?)b(?![a-z0-9])", m_id)
+    parameter_sizes = [float(token) for token in parameter_tokens]
+    if re.search(r"(?<![a-z0-9])\d+x\d+(?:\.\d+)?b(?![a-z0-9])", m_id):
+        return 4
+    if parameter_sizes and max(parameter_sizes) >= 35:
         return 4
 
     # Score 1 : ultra légers
-    if any(k in m_id for k in ["1b", "0.5b", "nano", "micro", "tiny"]):
+    if any(size in parameter_sizes for size in [0.5, 1.0]) or re.search(r"(?<![a-z0-9])(?:nano|micro|tiny)(?![a-z0-9])", m_id):
         return 1
 
     # Score 2 : petits modèles (attention à ne pas matcher 'mini' dans 'gemini')
     has_mini = bool(re.search(r"[-_/]mini([-_/:]|$)", m_id))
-    if "flash-lite" in m_id or "lite" in m_id or has_mini or any(k in m_id for k in ["7b", "3b"]):
+    if "flash-lite" in m_id or "lite" in m_id or has_mini or any(size in parameter_sizes for size in [3.0, 7.0]):
         return 2
 
     # Score 3 : modèles rapides intermédiaires
-    if any(k in m_id for k in ["flash", "haiku", "mistral-small", "32b", "14b", "8b"]):
+    if any(k in m_id for k in ["flash", "haiku", "mistral-small"]) or any(size in parameter_sizes for size in [8.0, 14.0, 31.0, 32.0]):
         return 3
 
     # Fallback heuristique basé sur le coût par million de tokens d'entrée
@@ -130,7 +138,7 @@ def create_backup(target_file: Path) -> Tuple[Optional[Path], Optional[Path]]:
     backup_dir = target_file.parent / "backups"
     backup_dir.mkdir(parents=True, exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     timestamped_backup = backup_dir / f"{target_file.stem}_{timestamp}{target_file.suffix}"
     latest_bak = target_file.with_suffix(target_file.suffix + ".bak")
 
@@ -149,8 +157,15 @@ def fetch_openrouter_models(timeout: int = 10) -> List[dict[str, Any]]:
         headers={"User-Agent": "ModelScope/1.0", "Accept": "application/json"},
     )
     with urllib.request.urlopen(request, timeout=timeout) as response:
-        payload = json.loads(response.read().decode("utf-8"))
-        return payload.get("data", [])
+        payload: object = json.loads(response.read().decode("utf-8"))
+    if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
+        raise ValueError("Réponse OpenRouter invalide : liste 'data' absente.")
+    models: list[dict[str, Any]] = []
+    for raw_model in payload["data"]:
+        if not isinstance(raw_model, dict):
+            raise ValueError("Réponse OpenRouter invalide : un modèle doit être un objet.")
+        models.append(raw_model)
+    return models
 
 
 def sync_models_from_openrouter(
@@ -187,7 +202,7 @@ def sync_models_from_openrouter(
     # Préparation des données JSON
     output_data = {
         "version": "1.0",
-        "last_updated": datetime.now().isoformat(),
+        "last_updated": datetime.now(timezone.utc).isoformat(),
         "source": OPENROUTER_API_URL,
         "total_models": len(parsed_models),
         "models": [

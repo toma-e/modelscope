@@ -1,0 +1,65 @@
+"""Tests du point d'entrée CLI et du chargement validé."""
+
+import json
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+import main
+
+
+class TestMain(unittest.TestCase):
+    def _write_valid_files(self, directory: Path) -> None:
+        (directory / "data").mkdir()
+        (directory / "config").mkdir()
+        (directory / "data" / "models.json").write_text(json.dumps({"models": [{
+            "id": "test/model", "provider": "test", "tier": "free_tier",
+            "cost_input_per_m": 0, "cost_output_per_m": 0, "context_window": 4096,
+            "supports_tools": False, "complexity_score": 1,
+        }]}), encoding="utf-8")
+        (directory / "config" / "agents_requirements.json").write_text(json.dumps({"agents": [{
+            "name": "agent", "description": "", "min_complexity": 1,
+            "max_complexity": 1, "requires_tools": False, "prefer_free": True,
+        }]}), encoding="utf-8")
+
+    def test_load_data_rejects_corrupted_json(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            models = directory / "models.json"
+            agents = directory / "agents.json"
+            models.write_text("{", encoding="utf-8")
+            agents.write_text('{"agents": []}', encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "JSON mal formé"):
+                main.load_data(models, agents)
+
+    def test_main_exports_with_explicit_argv(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self._write_valid_files(directory)
+            args = main.build_parser().parse_args(["--export"])
+            self.assertEqual(main.run(args, directory), 0)
+            self.assertTrue((directory / "config" / "opencode.json").exists())
+
+    def test_run_returns_one_when_sync_fails_without_rewriting_catalogue(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self._write_valid_files(directory)
+            catalogue = directory / "data" / "models.json"
+            before = catalogue.read_text(encoding="utf-8")
+            args = main.build_parser().parse_args(["--sync"])
+            with patch("main.sync_models_from_openrouter", side_effect=OSError("offline")):
+                self.assertEqual(main.run(args, directory), 1)
+            self.assertEqual(catalogue.read_text(encoding="utf-8"), before)
+
+    def test_run_returns_two_for_missing_configuration(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            (directory / "data").mkdir()
+            (directory / "data" / "models.json").write_text('{"models": []}', encoding="utf-8")
+            args = main.build_parser().parse_args([])
+            self.assertEqual(main.run(args, directory), 2)
+
+
+if __name__ == "__main__":
+    unittest.main()

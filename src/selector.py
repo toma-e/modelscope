@@ -1,20 +1,38 @@
-"""Module de sélection et de filtrage des modèles LLM pour les agents.
-
-Ce module fournit les structures de données typées et la logique pure
-pour attribuer et classer les modèles selon les exigences d'un agent,
-avec gestion de la fenêtre de contexte, des filtres de fournisseurs,
-des modèles imposés et du surclassement (fallback).
-"""
+"""Sélection pure et validation des modèles LLM pour les agents."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, Optional, Sequence
+
+
+def _required(data: dict[str, Any], field: str, context: str) -> Any:
+    if field not in data:
+        raise ValueError(f"{context}: champ obligatoire '{field}' absent.")
+    return data[field]
+
+
+def _bool(value: Any, field: str, context: str) -> bool:
+    if not isinstance(value, bool):
+        raise ValueError(f"{context}: '{field}' doit être un booléen.")
+    return value
+
+
+def _int(value: Any, field: str, context: str, minimum: int = 0) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
+        raise ValueError(f"{context}: '{field}' doit être un entier supérieur ou égal à {minimum}.")
+    return value
+
+
+def _number(value: Any, field: str, context: str, minimum: float = 0.0) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value < minimum:
+        raise ValueError(f"{context}: '{field}' doit être un nombre supérieur ou égal à {minimum}.")
+    return float(value)
 
 
 @dataclass(frozen=True)
 class Model:
-    """Représentation d'un modèle LLM disponible dans le catalogue."""
+    """Représentation validée d'un modèle disponible dans le catalogue."""
 
     id: str
     provider: str
@@ -38,23 +56,33 @@ class Model:
         return self.cost_input_per_m + self.cost_output_per_m
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Model:
-        """Instancie un Model depuis un dictionnaire."""
+    def from_dict(cls, data: dict[str, Any], context: str = "modèle") -> Model:
+        """Instancie un modèle après validation stricte de son dictionnaire."""
+        model_id = _required(data, "id", context)
+        provider = _required(data, "provider", context)
+        tier = _required(data, "tier", context)
+        if not all(isinstance(value, str) and value for value in (model_id, provider, tier)):
+            raise ValueError(f"{context}: 'id', 'provider' et 'tier' doivent être des chaînes non vides.")
+        if tier not in {"free_tier", "pay_as_you_go"}:
+            raise ValueError(f"{context}: 'tier' doit être 'free_tier' ou 'pay_as_you_go'.")
+        complexity = _int(_required(data, "complexity_score", context), "complexity_score", context, 1)
+        if complexity > 5:
+            raise ValueError(f"{context}: 'complexity_score' doit être compris entre 1 et 5.")
         return cls(
-            id=str(data["id"]),
-            provider=str(data["provider"]),
-            tier=str(data["tier"]),
-            cost_input_per_m=float(data["cost_input_per_m"]),
-            cost_output_per_m=float(data["cost_output_per_m"]),
-            context_window=int(data["context_window"]),
-            supports_tools=bool(data["supports_tools"]),
-            complexity_score=int(data["complexity_score"]),
+            id=model_id,
+            provider=provider,
+            tier=tier,
+            cost_input_per_m=_number(_required(data, "cost_input_per_m", context), "cost_input_per_m", context),
+            cost_output_per_m=_number(_required(data, "cost_output_per_m", context), "cost_output_per_m", context),
+            context_window=_int(_required(data, "context_window", context), "context_window", context, 1),
+            supports_tools=_bool(_required(data, "supports_tools", context), "supports_tools", context),
+            complexity_score=complexity,
         )
 
 
 @dataclass(frozen=True)
 class AgentRequirement:
-    """Spécification des besoins techniques et de coût d'un agent."""
+    """Spécification validée des besoins techniques et budgétaires d'un agent."""
 
     name: str
     description: str
@@ -63,52 +91,60 @@ class AgentRequirement:
     requires_tools: bool
     prefer_free: bool
     min_context_window: Optional[int] = None
-    allowed_providers: Optional[List[str]] = None
-    excluded_providers: Optional[List[str]] = None
+    allowed_providers: Optional[list[str]] = None
+    excluded_providers: Optional[list[str]] = None
     force_model: Optional[str] = None
     estimated_tokens_input: int = 0
     estimated_tokens_output: int = 0
     max_monthly_budget: Optional[float] = None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> AgentRequirement:
-        """Instancie un AgentRequirement depuis un dictionnaire."""
-        allowed = data.get("allowed_providers")
-        if allowed is not None:
-            allowed = [str(p) for p in allowed]
+    def from_dict(cls, data: dict[str, Any], context: str = "agent") -> AgentRequirement:
+        """Instancie un agent après validation stricte de son dictionnaire."""
+        name = _required(data, "name", context)
+        if not isinstance(name, str) or not name:
+            raise ValueError(f"{context}: 'name' doit être une chaîne non vide.")
+        description = data.get("description", "")
+        if not isinstance(description, str):
+            raise ValueError(f"{context}: 'description' doit être une chaîne.")
+        minimum = _int(_required(data, "min_complexity", context), "min_complexity", context, 1)
+        maximum = _int(_required(data, "max_complexity", context), "max_complexity", context, 1)
+        if minimum > 5 or maximum > 5 or minimum > maximum:
+            raise ValueError(f"{context}: la plage de complexité doit être comprise entre 1 et 5.")
 
-        excluded = data.get("excluded_providers")
-        if excluded is not None:
-            excluded = [str(p) for p in excluded]
+        def providers(field: str) -> Optional[list[str]]:
+            value = data.get(field)
+            if value is None:
+                return None
+            if not isinstance(value, list) or not all(isinstance(item, str) and item for item in value):
+                raise ValueError(f"{context}: '{field}' doit être une liste de chaînes non vides.")
+            return value
 
-        min_ctx = data.get("min_context_window")
-        if min_ctx is not None:
-            min_ctx = int(min_ctx)
-
-        force = data.get("force_model")
-        if force is not None:
-            force = str(force)
-
-        in_tokens = int(data.get("estimated_tokens_input", 0))
-        out_tokens = int(data.get("estimated_tokens_output", 0))
-
+        allowed, excluded = providers("allowed_providers"), providers("excluded_providers")
+        if allowed and excluded and {item.lower() for item in allowed} & {item.lower() for item in excluded}:
+            raise ValueError(f"{context}: un fournisseur ne peut être à la fois autorisé et exclu.")
+        min_context = data.get("min_context_window")
+        if min_context is not None:
+            min_context = _int(min_context, "min_context_window", context, 1)
+        force_model = data.get("force_model")
+        if force_model is not None and (not isinstance(force_model, str) or not force_model):
+            raise ValueError(f"{context}: 'force_model' doit être une chaîne non vide.")
         max_budget = data.get("max_monthly_budget")
         if max_budget is not None:
-            max_budget = float(max_budget)
-
+            max_budget = _number(max_budget, "max_monthly_budget", context)
         return cls(
-            name=str(data["name"]),
-            description=str(data.get("description", "")),
-            min_complexity=int(data["min_complexity"]),
-            max_complexity=int(data["max_complexity"]),
-            requires_tools=bool(data["requires_tools"]),
-            prefer_free=bool(data.get("prefer_free", False)),
-            min_context_window=min_ctx,
+            name=name,
+            description=description,
+            min_complexity=minimum,
+            max_complexity=maximum,
+            requires_tools=_bool(_required(data, "requires_tools", context), "requires_tools", context),
+            prefer_free=_bool(data.get("prefer_free", False), "prefer_free", context),
+            min_context_window=min_context,
             allowed_providers=allowed,
             excluded_providers=excluded,
-            force_model=force,
-            estimated_tokens_input=in_tokens,
-            estimated_tokens_output=out_tokens,
+            force_model=force_model,
+            estimated_tokens_input=_int(data.get("estimated_tokens_input", 0), "estimated_tokens_input", context),
+            estimated_tokens_output=_int(data.get("estimated_tokens_output", 0), "estimated_tokens_output", context),
             max_monthly_budget=max_budget,
         )
 
@@ -120,185 +156,97 @@ class SelectionResult:
     agent_name: str
     model: Optional[Model]
     is_fallback: bool
-    candidates: List[Model]
+    candidates: list[Model]
     reason: str
 
 
-def check_common_constraints(model: Model, agent_req: AgentRequirement) -> bool:
-    """Vérifie les contraintes transversales : outils, contexte, fournisseurs autorisés/exclus et budget."""
-    # 1. Support des outils
+def common_constraint_violations(model: Model, agent_req: AgentRequirement) -> list[str]:
+    """Liste les contraintes transversales non respectées par un modèle."""
+    violations: list[str] = []
     if agent_req.requires_tools and not model.supports_tools:
-        return False
-
-    # 2. Fenêtre de contexte minimale
-    if agent_req.min_context_window is not None:
-        if model.context_window < agent_req.min_context_window:
-            return False
-
-    # 3. Fournisseurs autorisés
-    if agent_req.allowed_providers:
-        allowed = {p.lower() for p in agent_req.allowed_providers}
-        if model.provider.lower() not in allowed:
-            return False
-
-    # 4. Fournisseurs exclus
-    if agent_req.excluded_providers:
-        excluded = {p.lower() for p in agent_req.excluded_providers}
-        if model.provider.lower() in excluded:
-            return False
-
-    # 5. Plafond budgétaire mensuel
-    if agent_req.max_monthly_budget is not None and (
-        agent_req.estimated_tokens_input > 0 or agent_req.estimated_tokens_output > 0
-    ):
-        monthly_cost = (
-            (agent_req.estimated_tokens_input / 1_000_000) * model.cost_input_per_m
-            + (agent_req.estimated_tokens_output / 1_000_000) * model.cost_output_per_m
+        violations.append("support des outils")
+    if agent_req.min_context_window is not None and model.context_window < agent_req.min_context_window:
+        violations.append("fenêtre de contexte minimale")
+    if agent_req.allowed_providers and model.provider.lower() not in {item.lower() for item in agent_req.allowed_providers}:
+        violations.append("fournisseur non autorisé")
+    if agent_req.excluded_providers and model.provider.lower() in {item.lower() for item in agent_req.excluded_providers}:
+        violations.append("fournisseur exclu")
+    if agent_req.max_monthly_budget is not None:
+        cost = (
+            agent_req.estimated_tokens_input / 1_000_000 * model.cost_input_per_m
+            + agent_req.estimated_tokens_output / 1_000_000 * model.cost_output_per_m
         )
-        if monthly_cost > agent_req.max_monthly_budget:
-            return False
+        if cost > agent_req.max_monthly_budget:
+            violations.append("plafond budgétaire mensuel")
+    return violations
 
-    return True
+
+def check_common_constraints(model: Model, agent_req: AgentRequirement) -> bool:
+    """Vérifie les contraintes transversales d'un agent."""
+    return not common_constraint_violations(model, agent_req)
 
 
 def is_model_compatible(model: Model, agent_req: AgentRequirement) -> bool:
     """Vérifie si un modèle respecte strictement les contraintes d'un agent."""
-    if not check_common_constraints(model, agent_req):
-        return False
-
-    return agent_req.min_complexity <= model.complexity_score <= agent_req.max_complexity
-
-
-def is_model_fallback_compatible(model: Model, agent_req: AgentRequirement) -> bool:
-    """Vérifie si un modèle est éligible pour un surclassement (fallback).
-
-    Un modèle est éligible en surclassement si :
-    - Il respecte toutes les contraintes transversales (outils, contexte, providers).
-    - Son score de complexité est supérieur à max_complexity (surqualifié mais capable).
-    """
-    if not check_common_constraints(model, agent_req):
-        return False
-
-    return model.complexity_score > agent_req.max_complexity
-
-
-def rank_models_for_agent(
-    agent_req: Union[AgentRequirement, dict[str, Any]],
-    models: Sequence[Union[Model, dict[str, Any]]],
-    allow_fallback: bool = False,
-) -> List[Model]:
-    """Classe les modèles éligibles pour un agent selon ses préférences.
-
-    Règles de priorité :
-    1. Modèles strictement compatibles en premier.
-    2. Si aucun modèle compatible et allow_fallback=True : modèles surqualifiés les plus économiques.
-    3. Si `prefer_free` est True, priorité absolue aux modèles `free_tier`.
-    4. Coût total (entrée + sortie) le plus faible.
-    5. Complexité la plus adaptée (plus proche du besoin).
-    """
-    req = agent_req if isinstance(agent_req, AgentRequirement) else AgentRequirement.from_dict(agent_req)
-    parsed_models = [m if isinstance(m, Model) else Model.from_dict(m) for m in models]
-
-    compatible = [m for m in parsed_models if is_model_compatible(m, req)]
-
-    def sorting_key_exact(model: Model) -> tuple[int, float, int]:
-        free_penalty = 0 if (req.prefer_free and model.tier == "free_tier") else (1 if req.prefer_free else 0)
-        cost = model.total_cost_per_m
-        complexity_inverted = -model.complexity_score
-        return (free_penalty, cost, complexity_inverted)
-
-    if compatible:
-        return sorted(compatible, key=sorting_key_exact)
-
-    if not allow_fallback:
-        return []
-
-    # Recherche de fallback (surclassement)
-    fallbacks = [m for m in parsed_models if is_model_fallback_compatible(m, req)]
-
-    def sorting_key_fallback(model: Model) -> tuple[int, float, int]:
-        free_penalty = 0 if (req.prefer_free and model.tier == "free_tier") else (1 if req.prefer_free else 0)
-        cost = model.total_cost_per_m
-        complexity_gap = model.complexity_score - req.max_complexity
-        return (free_penalty, cost, complexity_gap)
-
-    return sorted(fallbacks, key=sorting_key_fallback)
-
-
-def resolve_model_for_agent(
-    agent_req: Union[AgentRequirement, dict[str, Any]],
-    models: Sequence[Union[Model, dict[str, Any]]],
-    allow_fallback: bool = True,
-) -> SelectionResult:
-    """Effectue une analyse complète et attribue le modèle optimal avec détails.
-
-    Gère le forçage manuel (force_model), la correspondance exacte et le surclassement.
-    """
-    req = agent_req if isinstance(agent_req, AgentRequirement) else AgentRequirement.from_dict(agent_req)
-    parsed_models = [m if isinstance(m, Model) else Model.from_dict(m) for m in models]
-
-    # 0. Gestion du modèle imposé manuellement (force_model)
-    if req.force_model:
-        matching = [m for m in parsed_models if m.id == req.force_model]
-        if matching:
-            return SelectionResult(
-                agent_name=req.name,
-                model=matching[0],
-                is_fallback=False,
-                candidates=matching,
-                reason=f"Modèle imposé manuellement ({req.force_model}).",
-            )
-        return SelectionResult(
-            agent_name=req.name,
-            model=None,
-            is_fallback=False,
-            candidates=[],
-            reason=f"Modèle imposé '{req.force_model}' introuvable dans le catalogue.",
-        )
-
-    # 1. Correspondance exacte
-    exact_candidates = rank_models_for_agent(req, parsed_models, allow_fallback=False)
-    if exact_candidates:
-        return SelectionResult(
-            agent_name=req.name,
-            model=exact_candidates[0],
-            is_fallback=False,
-            candidates=exact_candidates,
-            reason="Correspondance exacte avec les exigences.",
-        )
-
-    # 2. Surclassement automatique (fallback) si autorisé
-    if allow_fallback:
-        fallback_candidates = rank_models_for_agent(req, parsed_models, allow_fallback=True)
-        if fallback_candidates:
-            chosen = fallback_candidates[0]
-            reason = (
-                f"Surclassement automatique (fallback) : aucun modèle dans la plage "
-                f"[{req.min_complexity}-{req.max_complexity}], modèle de complexité "
-                f"{chosen.complexity_score} sélectionné pour sa rentabilité."
-            )
-            return SelectionResult(
-                agent_name=req.name,
-                model=chosen,
-                is_fallback=True,
-                candidates=fallback_candidates,
-                reason=reason,
-            )
-
-    return SelectionResult(
-        agent_name=req.name,
-        model=None,
-        is_fallback=False,
-        candidates=[],
-        reason="Aucun modèle compatible trouvé respectant les contraintes.",
+    return check_common_constraints(model, agent_req) and (
+        agent_req.min_complexity <= model.complexity_score <= agent_req.max_complexity
     )
 
 
-def select_model_for_agent(
-    agent_req: Union[AgentRequirement, dict[str, Any]],
-    models: Sequence[Union[Model, dict[str, Any]]],
-    allow_fallback: bool = True,
-) -> Optional[Model]:
+def is_model_fallback_compatible(model: Model, agent_req: AgentRequirement) -> bool:
+    """Vérifie si un modèle est éligible à un surclassement."""
+    return check_common_constraints(model, agent_req) and model.complexity_score > agent_req.max_complexity
+
+
+def _parse_requirement(agent_req: AgentRequirement | dict[str, Any]) -> AgentRequirement:
+    return agent_req if isinstance(agent_req, AgentRequirement) else AgentRequirement.from_dict(agent_req)
+
+
+def _parse_models(models: Sequence[Model | dict[str, Any]]) -> list[Model]:
+    return [model if isinstance(model, Model) else Model.from_dict(model) for model in models]
+
+
+def rank_models_for_agent(agent_req: AgentRequirement | dict[str, Any], models: Sequence[Model | dict[str, Any]], allow_fallback: bool = False) -> list[Model]:
+    """Classe les modèles compatibles, puis les surclassements si demandé."""
+    req, parsed_models = _parse_requirement(agent_req), _parse_models(models)
+    exact = [model for model in parsed_models if is_model_compatible(model, req)]
+
+    def key(model: Model, fallback: bool = False) -> tuple[int, float, int]:
+        free_penalty = 0 if req.prefer_free and model.is_free else int(req.prefer_free)
+        complexity = model.complexity_score - req.max_complexity if fallback else -model.complexity_score
+        return free_penalty, model.total_cost_per_m, complexity
+
+    if exact:
+        return sorted(exact, key=key)
+    if not allow_fallback:
+        return []
+    fallback = [model for model in parsed_models if is_model_fallback_compatible(model, req)]
+    return sorted(fallback, key=lambda model: key(model, fallback=True))
+
+
+def resolve_model_for_agent(agent_req: AgentRequirement | dict[str, Any], models: Sequence[Model | dict[str, Any]], allow_fallback: bool = True) -> SelectionResult:
+    """Attribue le meilleur modèle, avec override manuel documenté."""
+    req, parsed_models = _parse_requirement(agent_req), _parse_models(models)
+    if req.force_model:
+        matching = next((model for model in parsed_models if model.id == req.force_model), None)
+        if matching:
+            violations = common_constraint_violations(matching, req)
+            if not req.min_complexity <= matching.complexity_score <= req.max_complexity:
+                violations.insert(0, "plage de complexité")
+            warning = f" Contraintes contournées : {', '.join(violations)}." if violations else ""
+            return SelectionResult(req.name, matching, False, [matching], f"Modèle imposé manuellement ({req.force_model}).{warning}")
+        return SelectionResult(req.name, None, False, [], f"Modèle imposé '{req.force_model}' introuvable dans le catalogue.")
+    exact = rank_models_for_agent(req, parsed_models)
+    if exact:
+        return SelectionResult(req.name, exact[0], False, exact, "Correspondance exacte avec les exigences.")
+    if allow_fallback:
+        fallback = rank_models_for_agent(req, parsed_models, allow_fallback=True)
+        if fallback:
+            chosen = fallback[0]
+            return SelectionResult(req.name, chosen, True, fallback, f"Surclassement automatique (fallback) : aucun modèle dans la plage [{req.min_complexity}-{req.max_complexity}], modèle de complexité {chosen.complexity_score} sélectionné pour sa rentabilité.")
+    return SelectionResult(req.name, None, False, [], "Aucun modèle compatible trouvé respectant les contraintes.")
+
+
+def select_model_for_agent(agent_req: AgentRequirement | dict[str, Any], models: Sequence[Model | dict[str, Any]], allow_fallback: bool = True) -> Optional[Model]:
     """Sélectionne le meilleur modèle pour un agent donné."""
-    result = resolve_model_for_agent(agent_req, models, allow_fallback=allow_fallback)
-    return result.model
+    return resolve_model_for_agent(agent_req, models, allow_fallback).model
