@@ -23,12 +23,15 @@ Il sélectionne le modèle le plus rentable et performant pour chaque agent en f
 ```text
 src/
 ├── selector.py   # Moteur de sélection pur (filtrage, scoring, fallback, surclassement). AUCUN I/O ni réseau ici.
-├── fetcher.py    # Synchronisation réseau (OpenRouter API), parsing des modèles et backups horodatés.
+├── fetcher.py    # Synchronisation réseau (OpenRouter API), parsing des modèles, écriture atomique et backups horodatés.
 ├── budget.py     # Simulation budgétaire mensuelle au token, plafonds de coût et alertes quotas free-tier.
-└── exporter.py   # Formatage et génération du fichier de configuration standard pour OpenCode.
+├── exporter.py   # Formatage et génération du fichier de configuration standard pour OpenCode.
+├── service.py    # Couche applicative (chemins, chargement, orchestration, verrou d'écriture).
+└── web.py        # Serveur HTTP local 127.0.0.1 (stdlib), sans logique métier.
 ```
 
-- **`main.py` :** Point d'entrée CLI (`--sync`, `--export [path]`, `--no-fallback`).
+- **`main.py` :** Point d'entrée CLI (`--sync`, `--export [path]`, `--no-fallback`, `--serve [port]`).
+- **`web/` :** Page unique de l'interface locale.
 - **`config/agents_requirements.json` :** Spécification des exigences de chaque agent.
 - **`config/opencode.json` :** Fichier de configuration cible généré pour OpenCode.
 - **`data/models.json` :** Catalogue actif des modèles.
@@ -39,7 +42,8 @@ src/
 ## 4. Invariants Architecturaux Critiques (NE JAMAIS BRISER)
 
 1. **Pureté de `selector.py` :**
-   - Toutes les fonctions d'évaluation (`is_model_compatible`, `rank_models_for_agent`, `resolve_model_for_agent`) doivent rester **pures et déterministes** (pas de lectures de fichiers, pas d'appels réseau, pas de mutations d'état global).
+   - Toutes les fonctions d'évaluation (`is_model_compatible`, `rank_models_for_agent`, `resolve_model_for_agent`) doivent rester **pures et déterministes** (pas de lectures de fichiers, pas d'appels réseau, pas de HTTP, pas de représentation HTML, pas de mutations d'état global).
+   - Le CLI et l'interface web passent exclusivement par `src/service.py` ; ils ne dupliquent pas la logique métier et n'échangent pas de sorties texte.
 2. **Typage strict et immuable :**
    - Utiliser des `dataclass(frozen=True)` pour représenter les modèles, les exigences et les résultats (`Model`, `AgentRequirement`, `SelectionResult`, etc.).
    - Utiliser le typage complet (`typing` : `Optional`, `List`, `Sequence`, `Dict`, `Union`, `Tuple`).

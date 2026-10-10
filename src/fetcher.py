@@ -10,8 +10,10 @@ Ce module permet de :
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
+import tempfile
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,6 +22,7 @@ from typing import Any, List, Optional, Tuple
 from src.selector import Model
 
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/models"
+MAX_TIMESTAMPED_BACKUPS = 20
 
 
 def estimate_complexity_score(model_id: str, prompt_cost_per_m: float) -> int:
@@ -126,7 +129,45 @@ def parse_openrouter_model(raw: dict[str, Any]) -> Optional[Model]:
     )
 
 
-def create_backup(target_file: Path) -> Tuple[Optional[Path], Optional[Path]]:
+def write_json_atomic(path: Path, data: object) -> None:
+    """Écrit un document JSON via un fichier temporaire puis un remplacement atomique."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handle, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    temporary_path = Path(temporary_name)
+    try:
+        with os.fdopen(handle, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=2, ensure_ascii=False)
+            file.flush()
+            os.fsync(file.fileno())
+        os.replace(temporary_path, path)
+    except Exception:
+        temporary_path.unlink(missing_ok=True)
+        raise
+
+
+def prune_timestamped_backups(
+    backup_dir: Path,
+    stem: str,
+    suffix: str,
+    keep: int = MAX_TIMESTAMPED_BACKUPS,
+) -> None:
+    """Conserve uniquement les sauvegardes horodatées les plus récentes."""
+    if keep < 1 or not backup_dir.is_dir():
+        return
+    archived = sorted(
+        path for path in backup_dir.glob(f"{stem}_*{suffix}") if path.is_file()
+    )
+    excess = len(archived) - keep
+    if excess <= 0:
+        return
+    for obsolete in archived[:excess]:
+        obsolete.unlink(missing_ok=True)
+
+
+def create_backup(
+    target_file: Path,
+    keep: int = MAX_TIMESTAMPED_BACKUPS,
+) -> Tuple[Optional[Path], Optional[Path]]:
     """Crée une sauvegarde horodatée et un fichier .bak si le fichier cible existe.
 
     Returns:
@@ -142,10 +183,9 @@ def create_backup(target_file: Path) -> Tuple[Optional[Path], Optional[Path]]:
     timestamped_backup = backup_dir / f"{target_file.stem}_{timestamp}{target_file.suffix}"
     latest_bak = target_file.with_suffix(target_file.suffix + ".bak")
 
-    # Copie vers la sauvegarde horodatée
     shutil.copy2(target_file, timestamped_backup)
-    # Copie vers le fichier .bak de commodité
     shutil.copy2(target_file, latest_bak)
+    prune_timestamped_backups(backup_dir, target_file.stem, target_file.suffix, keep)
 
     return timestamped_backup, latest_bak
 
@@ -220,9 +260,7 @@ def sync_models_from_openrouter(
         ],
     }
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(output_data, f, indent=2, ensure_ascii=False)
+    write_json_atomic(output_path, output_data)
 
     return len(parsed_models), backup_path
 

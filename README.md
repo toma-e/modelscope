@@ -34,12 +34,18 @@ modelscope/
 │   ├── selector.py                # Moteur d'attribution, filtrage strict & surclassement (fallback)
 │   ├── fetcher.py                 # Synchronisation dynamique via l'API OpenRouter & backups
 │   ├── budget.py                  # Simulation des coûts mensuels, quotas & alertes rate-limits
-│   └── exporter.py                # Génération du format de configuration OpenCode
+│   ├── exporter.py                # Génération du format de configuration OpenCode
+│   ├── service.py                 # Orchestration (fichiers, sélection, export, sync)
+│   └── web.py                     # Serveur HTTP local 127.0.0.1
+├── web/
+│   └── index.html                 # Interface unique (affectations, budget, actions)
 ├── tests/
 │   ├── test_selector.py           # Tests du sélecteur et des filtres avancés
 │   ├── test_fetcher.py            # Tests du parsing OpenRouter et de la sauvegarde
 │   ├── test_budget.py             # Tests du calcul des coûts et alertes quotas
-│   └── test_exporter.py           # Tests de la structure d'export OpenCode
+│   ├── test_exporter.py           # Tests de la structure d'export OpenCode
+│   ├── test_service.py            # Tests du service applicatif
+│   └── test_web.py                # Tests des routes HTTP locales
 ├── main.py                        # Interface CLI principale
 ├── .cursorrules                   # Règles de développement pour agents IA (Cursor, Windsurf...)
 ├── AGENTS.md                      # Guide universel pour les agents de code
@@ -102,6 +108,15 @@ python3 main.py --sync
 python3 -m src.fetcher
 ```
 
+### Interface Web Locale
+Pour consulter les affectations dans le navigateur (écoute uniquement sur `127.0.0.1`) :
+```bash
+python3 main.py --serve
+# Port personnalisé :
+python3 main.py --serve 9000
+```
+Ouvrir ensuite `http://127.0.0.1:8765/`. Les exigences d'agents restent en lecture seule.
+
 ### Options en Ligne de Commande
 
 | Option | Description |
@@ -109,6 +124,7 @@ python3 -m src.fetcher
 | `--export [PATH]` | Génère le fichier de configuration OpenCode (défaut : `config/opencode.json`). |
 | `--sync` | Télécharge et met à jour le catalogue depuis OpenRouter avec création d'un backup. |
 | `--no-fallback` | Désactive le surclassement automatique si aucun modèle exact n'est trouvé. |
+| `--serve [PORT]` | Démarre l'interface web locale sur 127.0.0.1 (défaut : 8765). |
 | `-h`, `--help` | Affiche l'aide détaillée. |
 
 ---

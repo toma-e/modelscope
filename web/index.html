@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ModelScope — Interface locale</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2330;
+      --line: #2c3a4d;
+      --text: #e8eef6;
+      --muted: #93a4b8;
+      --ok: #3dd68c;
+      --warn: #f5c14a;
+      --bad: #f07178;
+      --accent: #6cb6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    header, main { max-width: 1100px; margin: 0 auto; padding: 1.25rem; }
+    header { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: flex-start; }
+    h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+    .muted { color: var(--muted); }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    button {
+      background: #23405f;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 0.4rem;
+      padding: 0.45rem 0.8rem;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.6; cursor: wait; }
+    button.primary { background: #1f6feb; border-color: #1f6feb; }
+    label { display: flex; gap: 0.4rem; align-items: center; color: var(--muted); font-size: 0.9rem; }
+    #banner {
+      display: none;
+      margin: 0 auto 1rem;
+      max-width: 1100px;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.4rem;
+    }
+    #banner.ok { display: block; background: #143528; color: var(--ok); }
+    #banner.err { display: block; background: #3a1c22; color: var(--bad); }
+    .summary, .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 0.6rem;
+      padding: 1rem;
+      margin-bottom: 0.85rem;
+    }
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; }
+    .card h2 { margin: 0 0 0.35rem; font-size: 1.1rem; }
+    .status { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+    .status.exact { color: var(--ok); }
+    .status.fallback { color: var(--warn); }
+    .status.forced { color: var(--accent); }
+    .status.unassigned { color: var(--bad); }
+    ul { margin: 0.4rem 0 0; padding-left: 1.1rem; }
+    code { font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>ModelScope</h1>
+      <p class="muted">Interface locale — 127.0.0.1 — exigences d'agents en lecture seule</p>
+    </div>
+    <div class="actions">
+      <label><input id="fallback" type="checkbox" checked> Surclassement (fallback)</label>
+      <button id="recalculate" type="button">Recalculer</button>
+      <button id="export" type="button">Exporter</button>
+      <button id="sync" class="primary" type="button">Synchroniser</button>
+    </div>
+  </header>
+  <div id="banner" role="status"></div>
+  <main>
+    <section id="summary" class="summary"></section>
+    <section id="assignments"></section>
+  </main>
+  <script>
+    const banner = document.getElementById("banner");
+    const summary = document.getElementById("summary");
+    const assignments = document.getElementById("assignments");
+    const fallbackInput = document.getElementById("fallback");
+    const buttons = ["recalculate", "export", "sync"].map((id) => document.getElementById(id));
+
+    function fallbackEnabled() {
+      return fallbackInput.checked;
+    }
+
+    function showBanner(ok, message) {
+      banner.className = ok ? "ok" : "err";
+      banner.textContent = message;
+    }
+
+    function money(value) {
+      return "$" + Number(value || 0).toFixed(4);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function statusLabel(status) {
+      if (status === "fallback") return "Fallback / surclassement";
+      if (status === "forced") return "Modèle imposé";
+      if (status === "unassigned") return "Non attribué";
+      return "Correspondance exacte";
+    }
+
+    function render(report) {
+      if (!report) return;
+      const cat = report.catalogue || {};
+      const budget = report.budget || {};
+      summary.innerHTML = [
+        ["Catalogue", (cat.total_models ?? 0) + " modèles"],
+        ["Mise à jour", cat.last_updated || "inconnue"],
+        ["Coût mensuel", money(budget.total_monthly_cost)],
+        ["Tokens / mois", Number(budget.total_tokens || 0).toLocaleString("fr-FR")],
+        ["Économies free-tier", money(budget.free_tier_savings)],
+        ["Alertes budget", budget.has_warnings ? "oui" : "non"],
+      ].map(([label, value]) => `<div><div class="muted">${escapeHtml(label)}</div><strong>${escapeHtml(value)}</strong></div>`).join("");
+
+      const diagnostics = (report.diagnostics || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+      const cards = (report.assignments || []).map((agent) => {
+        const model = agent.model
+          ? `<p><code>${escapeHtml(agent.model.id)}</code> · complexité ${escapeHtml(agent.model.complexity_score)} · ${escapeHtml(agent.model.tier)}</p>`
+          : "<p class='muted'>Aucun modèle retenu.</p>";
+        const alternatives = (agent.alternatives || [])
+          .slice(0, 5)
+          .map((item) => `<li><code>${escapeHtml(item.id)}</code> (${money(item.total_cost_per_m)} / MTok)</li>`)
+          .join("");
+        const budgetLine = agent.budget
+          ? `<p>Coût estimé ${money(agent.budget.monthly_total_cost)}${agent.budget.budget_exceeded ? " · plafond dépassé" : ""}${agent.budget.quota_warning ? " · " + escapeHtml(agent.budget.quota_warning) : ""}</p>`
+          : "";
+        return `<article class="card">
+          <div class="status ${escapeHtml(agent.status)}">${escapeHtml(statusLabel(agent.status))}</div>
+          <h2>${escapeHtml(agent.name)}</h2>
+          <p class="muted">${escapeHtml(agent.description)}</p>
+          ${model}
+          <p>${escapeHtml(agent.reason)}</p>
+          ${budgetLine}
+          ${alternatives ? `<p class="muted">Alternatives</p><ul>${alternatives}</ul>` : ""}
+        </article>`;
+      }).join("");
+      assignments.innerHTML = (diagnostics ? `<article class="card"><h2>Diagnostics</h2><ul>${diagnostics}</ul></article>` : "") + cards;
+    }
+
+    async function call(path, method) {
+      buttons.forEach((button) => { button.disabled = true; });
+      try {
+        const options = { method, headers: { "Content-Type": "application/json" } };
+        if (method !== "GET") {
+          options.body = JSON.stringify({ fallback: fallbackEnabled() });
+        }
+        const url = method === "GET"
+          ? path + "?fallback=" + (fallbackEnabled() ? "1" : "0")
+          : path;
+        const response = await fetch(url, options);
+        const payload = await response.json();
+        showBanner(Boolean(payload.ok), payload.message || (payload.ok ? "OK" : "Erreur"));
+        if (payload.report) render(payload.report);
+      } catch (error) {
+        showBanner(false, "Impossible de joindre le serveur local : " + error);
+      } finally {
+        buttons.forEach((button) => { button.disabled = false; });
+      }
+    }
+
+    document.getElementById("recalculate").addEventListener("click", () => call("/api/recalculate", "POST"));
+    document.getElementById("export").addEventListener("click", () => call("/api/export", "POST"));
+    document.getElementById("sync").addEventListener("click", () => call("/api/sync", "POST"));
+    call("/api/report", "GET");
+  </script>
+</body>
+</html>

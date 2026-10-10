@@ -21,19 +21,15 @@ flowchart TD
     FET -->|Crée backup| BKP["data/backups/*.json"]
     FET -->|Génère| MJ["data/models.json"]
     
-    AR["config/agents_requirements.json"] --> SEL["src/selector.py"]
-    MJ --> SEL
-    
-    SEL -->|SelectionResult| BUD["src/budget.py"]
-    AR --> BUD
-    
-    SEL --> EXP["src/exporter.py"]
-    BUD --> EXP
+    AR["config/agents_requirements.json"] --> SVC["src/service.py"]
+    MJ --> SVC
+    SVC --> SEL["src/selector.py"]
+    SVC --> BUD["src/budget.py"]
+    SVC --> EXP["src/exporter.py"]
     EXP -->|Exporte| OC["config/opencode.json"]
     
-    CLI["main.py"] --> SEL
-    CLI --> BUD
-    CLI --> EXP
+    CLI["main.py"] --> SVC
+    WEB["src/web.py"] --> SVC
 ```
 
 ---
@@ -49,7 +45,7 @@ Lorsqu'un nouvel agent prend en main ce projet, il doit :
    ```bash
    python3 -m unittest discover tests
    ```
-   *Tous les tests (actuellement 24) doivent être au vert.*
+   *Tous les tests doivent être au vert.*
 3. **Tester l'exécution principale :**
    ```bash
    python3 main.py --export
@@ -61,11 +57,13 @@ Lorsqu'un nouvel agent prend en main ce projet, il doit :
 
 | Module / Fichier | Responsabilité Principale | Contraintes Particulières |
 |---|---|---|
-| [`src/selector.py`](file:///home/thomas/code/projets/ModelScope-Anti/modelscope-Anti/src/selector.py) | Filtrage, tri, sélection et surclassement | **Fonctions pures uniquement**. Aucun appel I/O ou réseau. |
-| [`src/fetcher.py`](file:///home/thomas/code/projets/ModelScope-Anti/modelscope-Anti/src/fetcher.py) | Récupération OpenRouter & scoring heuristique | Toujours appeler `create_backup()` avant d'écraser `data/models.json`. |
+| [`src/selector.py`](file:///home/thomas/code/projets/ModelScope-Anti/modelscope-Anti/src/selector.py) | Filtrage, tri, sélection et surclassement | **Fonctions pures uniquement**. Aucun appel I/O, réseau ou HTTP. |
+| [`src/fetcher.py`](file:///home/thomas/code/projets/ModelScope-Anti/modelscope-Anti/src/fetcher.py) | Récupération OpenRouter & scoring heuristique | Backup puis écriture atomique ; rétention des sauvegardes horodatées. |
 | [`src/budget.py`](file:///home/thomas/code/projets/ModelScope-Anti/modelscope-Anti/src/budget.py) | Calcul des coûts au token & alertes de quotas | Seuil critique free-tier : `1_000_000` tokens/mois. |
 | [`src/exporter.py`](file:///home/thomas/code/projets/ModelScope-Anti/modelscope-Anti/src/exporter.py) | Génération du JSON pour OpenCode | Structure immuable avec `metadata`, `budget_simulation` et `agents`. |
-| [`main.py`](file:///home/thomas/code/projets/ModelScope-Anti/modelscope-Anti/main.py) | Interface CLI en ligne de commande | Supporte `--sync`, `--export [path]`, `--no-fallback`. |
+| [`src/service.py`](file:///home/thomas/code/projets/ModelScope-Anti/modelscope-Anti/src/service.py) | Chargement, orchestration, export et sync | Seule couche I/O ; verrou pour les écritures concurrentes. |
+| [`src/web.py`](file:///home/thomas/code/projets/ModelScope-Anti/modelscope-Anti/src/web.py) | Interface HTTP locale | Bind `127.0.0.1` uniquement ; stdlib ; pas de logique métier. |
+| [`main.py`](file:///home/thomas/code/projets/ModelScope-Anti/modelscope-Anti/main.py) | Interface CLI en ligne de commande | Supporte `--sync`, `--export [path]`, `--no-fallback`, `--serve [port]`. |
 
 ---
 
@@ -77,6 +75,7 @@ Lorsqu'un nouvel agent prend en main ce projet, il doit :
 - ✅ **Jalon 4 (Export OpenCode) :** Module d'export standardisé générant `config/opencode.json`.
 - ✅ **Jalon 5 (Filtres Avancés) :** `min_context_window`, `allowed_providers`, `excluded_providers`, `force_model`.
 - ✅ **Jalon 6 (Simulation Budgétaire) :** Calculs de coût mensuel au token, alertes de quotas free-tier, gestion du `max_monthly_budget`.
+- ✅ **Jalon 7 (Interface web locale) :** Service applicatif partagé, serveur `127.0.0.1`, page unique de consultation.
 
 ---
 

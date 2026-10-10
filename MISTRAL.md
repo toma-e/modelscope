@@ -13,6 +13,7 @@ Tous les tests doivent être au vert.
 - **Attribution des modèles :** `python3 main.py`
 - **Export vers OpenCode :** `python3 main.py --export`
 - **Synchronisation catalogue :** `python3 main.py --sync`
+- **Interface web locale :** `python3 main.py --serve`
 
 ## Principes d'architecture
 1. **`src/selector.py` :** Fonctions pures uniquement (pas de réseau ni de lecture de fichier).

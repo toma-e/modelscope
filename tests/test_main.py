@@ -48,9 +48,13 @@ class TestMain(unittest.TestCase):
             catalogue = directory / "data" / "models.json"
             before = catalogue.read_text(encoding="utf-8")
             args = main.build_parser().parse_args(["--sync"])
-            with patch("main.sync_models_from_openrouter", side_effect=OSError("offline")):
+            with patch("src.service.sync_models_from_openrouter", side_effect=OSError("offline")):
                 self.assertEqual(main.run(args, directory), 1)
             self.assertEqual(catalogue.read_text(encoding="utf-8"), before)
+
+    def test_parser_accepts_serve_default_port(self) -> None:
+        args = main.build_parser().parse_args(["--serve"])
+        self.assertEqual(args.serve, 8765)
 
     def test_run_returns_two_for_missing_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

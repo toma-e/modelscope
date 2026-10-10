@@ -10,7 +10,7 @@ python3 -m unittest discover tests
 Tous les tests doivent obligatoirement réussir.
 
 ## Principes d'architecture
-1. **`src/selector.py` est strictement pur :** Aucune lecture de fichier, aucun appel réseau, aucune modification d'état global.
+1. **`src/selector.py` est strictement pur :** Aucune lecture de fichier, aucun appel réseau, aucun HTTP, aucune modification d'état global. Le CLI et le web passent par `src/service.py`.
 2. **Typage strict et immuable :** Utiliser `dataclass(frozen=True)` et les types complets de `typing`.
 3. **Sauvegardes automatiques :** Toute mise à jour de `data/models.json` via `src/fetcher.py` doit d'abord appeler `create_backup()`.
 4. **Documentation en français :** Les docstrings et commentaires doivent être rédigés en français.

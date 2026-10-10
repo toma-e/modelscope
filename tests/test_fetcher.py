@@ -12,6 +12,8 @@ from src.fetcher import (
     estimate_complexity_score,
     fetch_openrouter_models,
     parse_openrouter_model,
+    prune_timestamped_backups,
+    write_json_atomic,
 )
 
 
@@ -91,6 +93,40 @@ class TestFetcher(unittest.TestCase):
             self.assertTrue(bkp_bak.exists())
             self.assertEqual(bkp_timestamp.read_text(encoding="utf-8"), json.dumps({"test": "data"}))
             self.assertEqual(bkp_bak.read_text(encoding="utf-8"), json.dumps({"test": "data"}))
+
+    def test_write_json_atomic_replaces_target_without_leaving_temp_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            target = Path(tmp_dir) / "models.json"
+            target.write_text("{}", encoding="utf-8")
+            write_json_atomic(target, {"ok": True, "count": 2})
+            self.assertEqual(json.loads(target.read_text(encoding="utf-8")), {"ok": True, "count": 2})
+            self.assertEqual(list(Path(tmp_dir).glob("*.tmp")), [])
+
+    def test_write_json_atomic_preserves_previous_file_when_dump_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            target = Path(tmp_dir) / "models.json"
+            target.write_text(json.dumps({"keep": True}), encoding="utf-8")
+            with patch("src.fetcher.json.dump", side_effect=OSError("disque plein")):
+                with self.assertRaises(OSError):
+                    write_json_atomic(target, {"keep": False})
+            self.assertEqual(json.loads(target.read_text(encoding="utf-8")), {"keep": True})
+
+    def test_prune_timestamped_backups_keeps_newest_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            backup_dir = Path(tmp_dir) / "backups"
+            backup_dir.mkdir()
+            for day in range(5):
+                (backup_dir / f"models_2026010{day}_000000.json").write_text("{}", encoding="utf-8")
+            prune_timestamped_backups(backup_dir, "models", ".json", keep=3)
+            remaining = sorted(path.name for path in backup_dir.iterdir())
+            self.assertEqual(
+                remaining,
+                [
+                    "models_20260102_000000.json",
+                    "models_20260103_000000.json",
+                    "models_20260104_000000.json",
+                ],
+            )
 
 
 if __name__ == "__main__":

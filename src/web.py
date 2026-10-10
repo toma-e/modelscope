@@ -1,0 +1,140 @@
+"""Serveur HTTP local (127.0.0.1) pour consulter et piloter ModelScope."""
+
+from __future__ import annotations
+
+import json
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from typing import Any, ClassVar
+from urllib.parse import parse_qs, urlparse
+
+from src.service import ApplicationService, OperationResult, serialize_report
+
+WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+LISTEN_HOST = "127.0.0.1"
+
+
+class LocalInterfaceHandler(BaseHTTPRequestHandler):
+    """Routes HTTP de l'interface locale ; aucun bind hors de la boucle locale."""
+
+    service: ClassVar[ApplicationService]
+    allow_fallback: ClassVar[bool]
+
+    def log_message(self, format: str, *args: object) -> None:
+        return
+
+    def do_GET(self) -> None:
+        parsed = urlparse(self.path)
+        if parsed.path in {"/", "/index.html"}:
+            self._send_static("index.html", "text/html; charset=utf-8")
+            return
+        if parsed.path == "/api/report":
+            fallback = _query_fallback(parsed.query, self.allow_fallback)
+            self._send_operation(self.service.build_report_result(allow_fallback=fallback))
+            return
+        self._send_json(404, {"ok": False, "message": "Ressource introuvable."})
+
+    def do_POST(self) -> None:
+        parsed = urlparse(self.path)
+        fallback = self._read_fallback_from_body(self.allow_fallback)
+        if parsed.path == "/api/recalculate":
+            self._send_operation(self.service.build_report_result(allow_fallback=fallback))
+            return
+        if parsed.path == "/api/export":
+            self._send_operation(self.service.export_config(allow_fallback=fallback))
+            return
+        if parsed.path == "/api/sync":
+            self._send_operation(self.service.sync_catalogue(allow_fallback=fallback))
+            return
+        self._send_json(404, {"ok": False, "message": "Ressource introuvable."})
+
+    def _read_fallback_from_body(self, default: bool) -> bool:
+        length_header = self.headers.get("Content-Length", "0")
+        try:
+            length = int(length_header)
+        except ValueError:
+            return default
+        if length <= 0:
+            return default
+        raw = self.rfile.read(length)
+        try:
+            payload: object = json.loads(raw.decode("utf-8") or "{}")
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return default
+        if not isinstance(payload, dict) or "fallback" not in payload:
+            return default
+        value = payload["fallback"]
+        if isinstance(value, bool):
+            return value
+        return default
+
+    def _send_operation(self, result: OperationResult) -> None:
+        payload: dict[str, Any] = {"ok": result.ok, "message": result.message}
+        if result.report is not None:
+            payload["report"] = serialize_report(result.report)
+        status = 200 if result.ok else 400
+        self._send_json(status, payload)
+
+    def _send_static(self, filename: str, content_type: str) -> None:
+        target = (WEB_DIR / filename).resolve()
+        if not str(target).startswith(str(WEB_DIR.resolve())) or not target.is_file():
+            self._send_json(404, {"ok": False, "message": "Page introuvable."})
+            return
+        body = target.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _send_json(self, status: int, payload: dict[str, Any]) -> None:
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
+
+def _query_fallback(query: str, default: bool) -> bool:
+    values = parse_qs(query).get("fallback", [])
+    if not values:
+        return default
+    token = values[0].strip().lower()
+    if token in {"0", "false", "no"}:
+        return False
+    if token in {"1", "true", "yes"}:
+        return True
+    return default
+
+
+def make_handler(service: ApplicationService, allow_fallback: bool = True) -> type[LocalInterfaceHandler]:
+    """Construit une classe de handler liée au service applicatif."""
+
+    return type(
+        "BoundLocalInterfaceHandler",
+        (LocalInterfaceHandler,),
+        {"service": service, "allow_fallback": allow_fallback},
+    )
+
+
+def create_server(
+    service: ApplicationService,
+    port: int = 8765,
+    allow_fallback: bool = True,
+) -> ThreadingHTTPServer:
+    """Instancie le serveur lié exclusivement à 127.0.0.1."""
+    handler = make_handler(service, allow_fallback=allow_fallback)
+    return ThreadingHTTPServer((LISTEN_HOST, port), handler)
+
+
+def serve_local_interface(
+    service: ApplicationService,
+    port: int = 8765,
+    allow_fallback: bool = True,
+) -> None:
+    """Démarre le serveur local jusqu'à interruption clavier."""
+    with create_server(service, port=port, allow_fallback=allow_fallback) as httpd:
+        httpd.serve_forever()

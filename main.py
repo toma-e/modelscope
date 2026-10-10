@@ -1,74 +1,49 @@
-"""Interface CLI de synchronisation, sélection et export ModelScope."""
+"""Interface CLI de synchronisation, sélection, export et serveur web local."""
 
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import sys
 from pathlib import Path
 from typing import Sequence
 
-from src.budget import simulate_fleet_budget
-from src.exporter import export_opencode_config
-from src.fetcher import sync_models_from_openrouter
-from src.selector import AgentRequirement, Model, SelectionResult, resolve_model_for_agent
+from src.service import ApplicationService, FleetReport, load_data
 
 LOGGER = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_SERVE_PORT = 8765
+__all__ = ["BASE_DIR", "build_parser", "load_data", "main", "render_results", "run"]
 
 
 def build_parser() -> argparse.ArgumentParser:
     """Construit le parseur d'arguments de la ligne de commande."""
-    parser = argparse.ArgumentParser(description="ModelScope - Attribution automatique de modèles LLM pour agents OpenCode.")
+    parser = argparse.ArgumentParser(
+        description="ModelScope - Attribution automatique de modèles LLM pour agents OpenCode."
+    )
     parser.add_argument("--sync", action="store_true", help="Synchronise le catalogue OpenRouter avec backup.")
     parser.add_argument("--no-fallback", action="store_true", help="Désactive le surclassement automatique.")
-    parser.add_argument("--export", nargs="?", const="config/opencode.json", help="Exporte la configuration OpenCode (chemin facultatif).")
+    parser.add_argument(
+        "--export",
+        nargs="?",
+        const="config/opencode.json",
+        help="Exporte la configuration OpenCode (chemin facultatif).",
+    )
+    parser.add_argument(
+        "--serve",
+        nargs="?",
+        const=DEFAULT_SERVE_PORT,
+        type=int,
+        metavar="PORT",
+        help=f"Démarre l'interface web locale sur 127.0.0.1 (défaut : {DEFAULT_SERVE_PORT}).",
+    )
     return parser
 
 
-def _load_json(path: Path, label: str) -> dict[str, object]:
-    """Charge un objet JSON et contextualise les erreurs de lecture."""
-    try:
-        with path.open(encoding="utf-8") as file:
-            data: object = json.load(file)
-    except FileNotFoundError as error:
-        raise ValueError(f"{label} introuvable : {path}") from error
-    except json.JSONDecodeError as error:
-        raise ValueError(f"{label} invalide ({path}) : JSON mal formé à la ligne {error.lineno}.") from error
-    except OSError as error:
-        raise ValueError(f"Lecture impossible de {label} ({path}) : {error}") from error
-    if not isinstance(data, dict):
-        raise ValueError(f"{label} invalide ({path}) : un objet JSON est attendu.")
-    return data
-
-
-def load_data(models_path: Path, agents_path: Path) -> tuple[list[Model], list[AgentRequirement]]:
-    """Charge et valide les catalogues de modèles et d'agents."""
-    models_document = _load_json(models_path, "Catalogue de modèles")
-    agents_document = _load_json(agents_path, "Configuration des agents")
-    raw_models = models_document.get("models", [])
-    raw_agents = agents_document.get("agents", [])
-    if not isinstance(raw_models, list):
-        raise ValueError(f"Catalogue de modèles invalide ({models_path}) : 'models' doit être une liste.")
-    if not isinstance(raw_agents, list):
-        raise ValueError(f"Configuration des agents invalide ({agents_path}) : 'agents' doit être une liste.")
-    try:
-        models = [Model.from_dict(item, f"modèle #{index}") for index, item in enumerate(raw_models, start=1) if isinstance(item, dict)]
-        if len(models) != len(raw_models):
-            raise ValueError("un modèle doit être un objet JSON")
-        agents = [AgentRequirement.from_dict(item, f"agent #{index}") for index, item in enumerate(raw_agents, start=1) if isinstance(item, dict)]
-        if len(agents) != len(raw_agents):
-            raise ValueError("un agent doit être un objet JSON")
-    except ValueError as error:
-        raise ValueError(f"Configuration invalide : {error}") from error
-    return models, agents
-
-
-def render_results(results: Sequence[SelectionResult], agents: Sequence[AgentRequirement]) -> None:
-    """Affiche les attributions et la simulation budgétaire."""
-    print(f"\n🤖 Configuration des agents ({len(agents)}) :\n")
-    for agent, result in zip(agents, results):
+def render_results(report: FleetReport) -> None:
+    """Affiche les attributions et la simulation budgétaire d'un rapport."""
+    print(f"\n🤖 Configuration des agents ({len(report.agents)}) :\n")
+    for agent, result in zip(report.agents, report.results):
         print("-" * 75)
         print(f"Agent : {agent.name} — {agent.description}")
         if result.model:
@@ -77,40 +52,42 @@ def render_results(results: Sequence[SelectionResult], agents: Sequence[AgentReq
             print(f"  Modèle retenu : {result.model.id}")
         else:
             print(f"  Aucun modèle compatible : {result.reason}")
-    budget = simulate_fleet_budget(results, agents)
     print("-" * 75)
-    print(f"💰 Coût mensuel total estimé : ${budget.total_monthly_cost:.4f}")
-    print(f"📊 Volume total estimé : {budget.total_tokens:,} tokens/mois")
+    print(f"💰 Coût mensuel total estimé : ${report.budget.total_monthly_cost:.4f}")
+    print(f"📊 Volume total estimé : {report.budget.total_tokens:,} tokens/mois")
 
 
 def run(args: argparse.Namespace, base_dir: Path = BASE_DIR) -> int:
     """Exécute le flux CLI et renvoie un code de sortie POSIX."""
-    models_path = base_dir / "data" / "models.json"
-    agents_path = base_dir / "config" / "agents_requirements.json"
-    if args.sync or not models_path.exists():
+    service = ApplicationService(base_dir)
+    allow_fallback = not args.no_fallback
+    if args.sync or (args.serve is None and not service.models_path.exists()):
         print("🔄 Synchronisation du catalogue depuis OpenRouter...")
-        try:
-            count, backup = sync_models_from_openrouter(models_path)
-        except Exception as error:  # Les erreurs réseau et de stockage sont externes.
-            LOGGER.error("Échec de synchronisation : %s", error)
-            print(f"❌ Échec de la synchronisation : {error}", file=sys.stderr)
+        synced = service.sync_catalogue(allow_fallback=allow_fallback)
+        if not synced.ok:
+            LOGGER.error("Échec de synchronisation : %s", synced.message)
+            print(f"❌ {synced.message}", file=sys.stderr)
             return 1
-        print(f"✅ {count} modèles synchronisés avec succès dans {models_path}")
-        if backup:
-            print(f"💾 Sauvegarde précédente archivée : {backup}")
-    try:
-        models, agents = load_data(models_path, agents_path)
-    except ValueError as error:
-        LOGGER.error("Erreur de chargement : %s", error)
-        print(f"❌ {error}", file=sys.stderr)
+        print(f"✅ {synced.message}")
+    if args.serve is not None:
+        from src.web import serve_local_interface
+
+        print(f"🌐 Interface locale : http://127.0.0.1:{args.serve}/")
+        serve_local_interface(service, port=args.serve, allow_fallback=allow_fallback)
+        return 0
+    built = service.build_report_result(allow_fallback=allow_fallback)
+    if not built.ok or built.report is None:
+        LOGGER.error("Erreur de chargement : %s", built.message)
+        print(f"❌ {built.message}", file=sys.stderr)
         return 2
-    results = [resolve_model_for_agent(agent, models, allow_fallback=not args.no_fallback) for agent in agents]
-    render_results(results, agents)
+    render_results(built.report)
     if args.export:
-        target = Path(args.export)
-        target = target if target.is_absolute() else base_dir / target
-        exported = export_opencode_config(results, agents, target)
-        print(f"🚀 Configuration OpenCode exportée avec succès : {exported}")
+        exported = service.export_config(args.export, allow_fallback=allow_fallback)
+        if not exported.ok:
+            LOGGER.error("Échec d'export : %s", exported.message)
+            print(f"❌ {exported.message}", file=sys.stderr)
+            return 1
+        print(f"🚀 {exported.message}")
     return 0
 
 

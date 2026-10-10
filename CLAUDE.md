@@ -6,7 +6,7 @@ Ce fichier synthétise les commandes et conventions du projet ModelScope pour un
 
 ### Tests Unitaires
 ```bash
-# Exécuter l'intégralité de la suite de tests (24 tests)
+# Exécuter l'intégralité de la suite de tests
 python3 -m unittest discover tests
 
 # Exécuter un fichier de test spécifique
@@ -14,6 +14,8 @@ python3 -m unittest tests/test_selector.py
 python3 -m unittest tests/test_budget.py
 python3 -m unittest tests/test_fetcher.py
 python3 -m unittest tests/test_exporter.py
+python3 -m unittest tests/test_service.py
+python3 -m unittest tests/test_web.py
 ```
 
 ### Exécution du Projet
@@ -26,6 +28,9 @@ python3 main.py --export
 
 # Forcer la synchronisation des modèles OpenRouter (avec backup horodaté)
 python3 main.py --sync
+
+# Interface web locale (127.0.0.1:8765)
+python3 main.py --serve
 ```
 
 ## Structure du Projet
@@ -33,6 +38,8 @@ python3 main.py --sync
 - `src/fetcher.py` : Téléchargement dynamique des modèles OpenRouter et archivage dans `data/backups/`.
 - `src/budget.py` : Calculs de coûts prévisionnels mensuels et alertes de quotas free-tier.
 - `src/exporter.py` : Génération du fichier de configuration standard pour OpenCode.
+- `src/service.py` : Orchestration I/O partagée par le CLI et le web.
+- `src/web.py` : Serveur HTTP local (stdlib, `127.0.0.1`).
 - `config/agents_requirements.json` : Profils de contraintes des agents.
 - `data/models.json` : Catalogue actif des modèles LLM.
 
