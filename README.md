@@ -117,6 +117,20 @@ python3 main.py --serve 9000
 ```
 Ouvrir ensuite `http://127.0.0.1:8765/`. Les exigences d'agents restent en lecture seule.
 
+#### Lanceurs Windows (via WSL)
+Si votre projet est dans WSL et vous utilisez Windows, des lanceurs sont disponibles :
+
+**Démarrage :**
+- PowerShell : ./start-web.ps1 (recommandé)
+- Batch : start-web.bat
+
+**Arrêt :**
+- PowerShell : ./stop-web.ps1 (recommandé)
+- Batch : stop-web.bat
+
+Ces scripts lancent automatiquement le serveur dans WSL et ouvrent le navigateur Windows.
+Consultez LANCEURS.md pour plus de détails.
+
 ### Options en Ligne de Commande
 
 | Option | Description |
