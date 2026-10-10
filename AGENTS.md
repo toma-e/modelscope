@@ -1,6 +1,6 @@
 # Guide Multi-Agents : ModelScope 🤖
 
-Ce document est le **point d'entrée pour tout agent IA** (Antigravity, Cursor, Claude Code, Windsurf, OpenCode, Aider...) intervenant sur le dépôt. Il garantit la continuité opérationnelle, la cohérence des choix techniques et le respect des conventions établies.
+Ce document est le **point d'entrée pour tout agent IA** (Antigravity, Cursor, Claude Code, GitHub Copilot / Codex, Mistral / Codestral, Windsurf, OpenCode, Aider...) intervenant sur le dépôt. Il garantit la continuité opérationnelle, la cohérence des choix techniques et le respect des conventions établies.
 
 ---
 

@@ -36,7 +36,8 @@
         "anthropic",
         "openai",
         "google",
-        "deepseek"
+        "deepseek",
+        "mistralai"
       ],
       "estimated_tokens_input": 1000000,
       "estimated_tokens_output": 250000,
