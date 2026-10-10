@@ -1,17 +1,103 @@
-# Instructions du Projet : ModelScope
+# Directives du Projet : ModelScope
 
-## Description
-ModelScope est un outil d'attribution automatique de modèles LLM pour les agents OpenCode.
-Il analyse un registre de modèles (tarifs, capacités, quotas gratuits) et attribue le meilleur modèle à chaque agent selon son profil d'exigence.
+Ce fichier définit les règles, conventions et invariants indispensables pour que tout agent de code (Cursor, Windsurf, OpenCode, Claude Code, Antigravity) puisse intervenir sur le projet sans casser la cohérence architecturale.
 
-## Stack Technique
+---
+
+## 1. Description & Objectif du Projet
+**ModelScope** est un outil de routage et d'attribution automatique de modèles LLM pour les agents **OpenCode**.
+Il sélectionne le modèle le plus rentable et performant pour chaque agent en fonction de ses contraintes techniques (support d'outils, fenêtre de contexte, complexité) et budgétaires (plafond mensuel, préférence pour le gratuit).
+
+---
+
+## 2. Stack Technique & Philosophie
 - **Langage :** Python 3.11+
-- **Gestionnaire de dépendances :** Poetry ou `pip` avec `requirements.txt` (standard library privilégiée au début)
-- **Format de données :** JSON / YAML
-- **Tests :** `pytest`
+- **Dépendances d'exécution :** Bibliothèque standard Python privilégiée (`dataclasses`, `typing`, `json`, `pathlib`, `urllib`, `argparse`, `shutil`). Aucune dépendance externe lourde pour le cœur du projet.
+- **Tests :** `unittest` (compatible `pytest` si installé).
+- **Conception :** KISS (Keep It Simple, Stupid) et fonctions pures.
 
-## Directives de Code
-- Utiliser la typification stricte (`typing` : `dataclass`, `TypedDict`, `Optional`, `List`).
-- Écrire des fonctions pures et sans effets de bord pour la logique de sélection (`selector.py`).
-- Préférer la lisibilité et la simplicité (KISS) : pas de framework lourd pour le MVP.
-- Documenter le code en français avec des docstrings claires.
+---
+
+## 3. Cartographie & Responsabilités des Modules
+
+```text
+src/
+├── selector.py   # Moteur de sélection pur (filtrage, scoring, fallback, surclassement). AUCUN I/O ni réseau ici.
+├── fetcher.py    # Synchronisation réseau (OpenRouter API), parsing des modèles et backups horodatés.
+├── budget.py     # Simulation budgétaire mensuelle au token, plafonds de coût et alertes quotas free-tier.
+└── exporter.py   # Formatage et génération du fichier de configuration standard pour OpenCode.
+```
+
+- **`main.py` :** Point d'entrée CLI (`--sync`, `--export [path]`, `--no-fallback`).
+- **`config/agents_requirements.json` :** Spécification des exigences de chaque agent.
+- **`config/opencode.json` :** Fichier de configuration cible généré pour OpenCode.
+- **`data/models.json` :** Catalogue actif des modèles.
+- **`data/backups/` :** Sauvegardes horodatées automatiques de `models.json`.
+
+---
+
+## 4. Invariants Architecturaux Critiques (NE JAMAIS BRISER)
+
+1. **Pureté de `selector.py` :**
+   - Toutes les fonctions d'évaluation (`is_model_compatible`, `rank_models_for_agent`, `resolve_model_for_agent`) doivent rester **pures et déterministes** (pas de lectures de fichiers, pas d'appels réseau, pas de mutations d'état global).
+2. **Typage strict et immuable :**
+   - Utiliser des `dataclass(frozen=True)` pour représenter les modèles, les exigences et les résultats (`Model`, `AgentRequirement`, `SelectionResult`, etc.).
+   - Utiliser le typage complet (`typing` : `Optional`, `List`, `Sequence`, `Dict`, `Union`, `Tuple`).
+3. **Sauvegarde obligatoire avant mise à jour du catalogue :**
+   - Toute modification ou réécriture de `data/models.json` par `src/fetcher.py` **doit** créer une copie horodatée dans `data/backups/` ainsi qu'une copie `data/models.json.bak`.
+4. **Gestion du Fallback (Surclassement) :**
+   - Si aucun modèle ne répond strictement à l'intervalle de complexité `[min_complexity, max_complexity]`, la fonction `resolve_model_for_agent` doit tenter un surclassement vers un modèle ayant `complexity_score > max_complexity` respectant les outils, le contexte et le budget.
+5. **Documentation en Français :**
+   - Les docstrings de modules, classes et fonctions doivent être rédigées en français clair et concis.
+
+---
+
+## 5. Commandes Canoniques de Test et de Validation
+
+Tout agent intervenant sur le code **DOIT** exécuter et valider les tests avant de proposer ou valider un changement :
+
+```bash
+# 1. Exécuter tous les tests unitaires
+python3 -m unittest discover tests
+
+# 2. Tester l'attribution et l'export
+python3 main.py --export
+
+# 3. Tester la synchronisation (nécessite accès réseau)
+python3 -m src.fetcher
+```
+
+---
+
+## 6. Structure des Données
+
+### `data/models.json`
+Chaque modèle comporte :
+- `id` (str) : identifiant du modèle (ex: `"anthropic/claude-3-5-sonnet"`, `"google/gemini-2.5-flash-lite"`)
+- `provider` (str) : fournisseur (ex: `"google"`, `"openrouter"`, `"anthropic"`)
+- `tier` (str) : `"free_tier"` ou `"pay_as_you_go"`
+- `cost_input_per_m` (float) : coût par million de tokens d'entrée ($)
+- `cost_output_per_m` (float) : coût par million de tokens de sortie ($)
+- `context_window` (int) : taille de la fenêtre de contexte
+- `supports_tools` (bool) : support de l'appel d'outils
+- `complexity_score` (int, 1 à 5) : niveau de complexité estimé
+
+### `config/agents_requirements.json`
+Chaque agent peut définir :
+- `name` (str) & `description` (str)
+- `min_complexity` (int, 1-5) & `max_complexity` (int, 1-5)
+- `requires_tools` (bool)
+- `prefer_free` (bool)
+- `min_context_window` (int, optionnel)
+- `allowed_providers` (list[str], optionnel)
+- `excluded_providers` (list[str], optionnel)
+- `force_model` (str, optionnel)
+- `estimated_tokens_input` (int, optionnel)
+- `estimated_tokens_output` (int, optionnel)
+- `max_monthly_budget` (float, optionnel)
+
+---
+
+## 7. Règles pour les Commits & Nouvelles Fonctionnalités
+- Tout nouveau module ou logique métier doit obligatoirement être accompagné de tests unitaires dédiés dans `tests/test_<nom>.py`.
+- Formater les messages de commit selon la convention *Conventional Commits* (`feat:`, `fix:`, `test:`, `docs:`, `refactor:`).

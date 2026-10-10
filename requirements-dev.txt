@@ -1,0 +1,4 @@
+# Dépendances de développement, tests et contrôle qualité
+pytest>=8.0.0
+ruff>=0.3.0
+mypy>=1.9.0
